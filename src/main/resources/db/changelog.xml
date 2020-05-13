@@ -1,27 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet id="v0-1-0_001" author="aleks.ce267@gmail.com">
         <sqlFile relativeToChangelogFile="true" path="sql/v0-1-0_001.sql"/>
         <comment>
             Initial schema for WebGuessWord-2
         </comment>
-    </changeSet>
-    <changeSet id="v0-1-0_002" author="aleks.ce267@gmail.com">
-        <sqlFile relativeToChangelogFile="true" path="sql/v0-1-0_002.sql"/>
-    </changeSet>
-    <changeSet id="v0-1-0_003" author="aleks.ce267@gmail.com">
-        <sqlFile relativeToChangelogFile="true" path="sql/v0-1-0_003.sql"/>
-    </changeSet>
-    <changeSet id="v0-1-0_004" author="aleks.ce267@gmail.com">
-        <sqlFile relativeToChangelogFile="true" path="sql/v0-1-0_004.sql"/>
-    </changeSet>
-    <changeSet id="v0-1-0_005" author="aleks.ce267@gmail.com">
-        <sqlFile relativeToChangelogFile="true" path="sql/v0-1-0_005.sql"/>
     </changeSet>
 
 </databaseChangeLog>

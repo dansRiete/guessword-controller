@@ -1,0 +1,10 @@
+INSERT INTO guessword.guest_stat (date, ms, event, id, learnt) VALUES ('2016-08-06 18:58:38', 559, 'r_answ', 6, null);
+INSERT INTO guessword.guest_stat (date, ms, event, id, learnt) VALUES ('2016-08-06 18:58:40', 202, 'r_answ', 12, null);
+INSERT INTO guessword.guest_stat (date, ms, event, id, learnt) VALUES ('2016-08-06 18:58:43', 114, 'r_answ', 5, null);
+INSERT INTO guessword.guest_stat (date, ms, event, id, learnt) VALUES ('2016-08-06 18:59:34', 564, 'r_answ', 1, null);
+INSERT INTO guessword.guest_stat (date, ms, event, id, learnt) VALUES ('2016-08-06 18:59:36', 823, 'r_answ', 21, null);
+INSERT INTO guessword.guest_stat (date, ms, event, id, learnt) VALUES ('2016-08-06 19:09:25', 625, 'r_answ', 10, null);
+INSERT INTO guessword.guest_stat (date, ms, event, id, learnt) VALUES ('2016-08-06 19:09:25', 719, 'r_answ', 14, null);
+INSERT INTO guessword.guest_stat (date, ms, event, id, learnt) VALUES ('2017-03-16 19:50:27', 883, 'r_answ', 2132, 0);
+INSERT INTO guessword.guest_stat (date, ms, event, id, learnt) VALUES ('2017-03-16 19:50:31', 757, 'r_answ', 290, 0);
+INSERT INTO guessword.guest_stat (date, ms, event, id, learnt) VALUES ('2017-03-16 19:50:33', 851, 'w_answ', 3482, 0);
