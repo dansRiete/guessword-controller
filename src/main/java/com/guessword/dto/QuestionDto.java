@@ -13,8 +13,8 @@ import lombok.*;
 @ToString(exclude = {"created", "lastAccessed", "tag"}, includeFieldNames = false)
 public class QuestionDto implements BaseQuestion {
     private Integer id;
-    private Double probabilityFactor;
-    private Double probabilityMultiplier;
+    private Double studyPoints;
+    private Double studyPointsMultiplier;
     private LocalDateTime created;
     private LocalDateTime lastAccessed;
     private String tag;

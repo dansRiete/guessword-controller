@@ -29,6 +29,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.guessword.utils.ApplicationConstants.*;
+import static com.guessword.utils.QuestionUtils.isStudied;
+
 /**
  * Contains all the logic for randomizing questions, ensuring the calculation of the probability of asking questions
  * depending on external conditions such as: the number of questions already studied and not studied, the category of
@@ -119,14 +122,14 @@ public class QuestionService {
             QuestionLikelihood questionLikelihood =
                 new QuestionLikelihood(
                     question.getId(),
-                    question.getProbabilityFactor(),
-                    poweredProbFactor = Math.pow(question.getProbabilityFactor(), power),
+                    question.getStudyPoints(),
+                    poweredProbFactor = Math.pow(question.getStudyPoints(), power),
                     -1,
                     -1,
                     -1,
                     -1
                 );
-            if (question.getProbabilityFactor() <= LEARNED_QUESTION_PROB_MARGIN) {
+            if (question.getStudyPoints() <= LEARNED_QUESTION_PROB_MARGIN) {
                 learnedQuestions.put(learnedIndexes++, questionLikelihood);
                 continue;   // Do not perform calculation for already learned questions
             }
@@ -184,7 +187,7 @@ public class QuestionService {
                         "Retrieved a random question %d %s probFactor = %#.1f",
                         question.getId(),
                         question.getWords(),
-                        question.getProbabilityFactor()
+                        question.getStudyPoints()
                 )
         );
         return questionMapper.toDto(question);
@@ -220,19 +223,20 @@ public class QuestionService {
 
     private Question rightAnswer(Question answeredQuestion, boolean rollback) {
 
-        Double previousProbabilityFactor = answeredQuestion.getProbabilityFactor();
-        Double previousProbabilityMultiplier = answeredQuestion.getProbabilityMultiplier();
-        answeredQuestion.setProbabilityFactor(previousProbabilityFactor - 3 * previousProbabilityMultiplier);
-        answeredQuestion.setProbabilityMultiplier(
-                previousProbabilityMultiplier == 1.0 ? 1.2 : previousProbabilityMultiplier * 1.2
+        Double previousStudyPoints = answeredQuestion.getStudyPoints();
+        Double previousStudyPointsMultiplier = answeredQuestion.getStudyPointsMultiplier();
+        answeredQuestion.setStudyPoints(previousStudyPoints - RIGHT_ANSWER_DECREMENT * previousStudyPointsMultiplier);
+        answeredQuestion.setStudyPointsMultiplier(
+                previousStudyPointsMultiplier == STUDY_POINTS_INIT_MULTIPLIER ? STUDY_POINTS_MULTIPLIER :
+                        previousStudyPointsMultiplier * STUDY_POINTS_MULTIPLIER
         );
         recalculateRandomizer(POWER);
 
         LOGGER.info(String.format(
                         "%sRight answered the question %d %s probFactor: [%#.1f => %#.1f], probMultiplier: [%#.2f => %#.2f]",
                         rollback ? "Rollbacked with " : "", answeredQuestion.getId(), answeredQuestion.getWords(),
-                        previousProbabilityFactor, answeredQuestion.getProbabilityFactor(),
-                        previousProbabilityMultiplier, answeredQuestion.getProbabilityMultiplier()
+                        previousStudyPoints, answeredQuestion.getStudyPoints(),
+                        previousStudyPointsMultiplier, answeredQuestion.getStudyPointsMultiplier()
                 ));
 
         answeredQuestion.setLastAccessed(LocalDateTime.now());
@@ -243,18 +247,23 @@ public class QuestionService {
 
     private Question wrongAnswer(Question answeredQuestion, boolean rollback) {
 
-        Double previousProbabilityFactor = answeredQuestion.getProbabilityFactor();
-        Double previousProbabilityMultiplier = answeredQuestion.getProbabilityMultiplier();
-        answeredQuestion.setProbabilityFactor(previousProbabilityFactor + 6 * answeredQuestion.getProbabilityMultiplier());
-        answeredQuestion.setProbabilityMultiplier(1.0);
+        Double previousStudyPoints = answeredQuestion.getStudyPoints();
+        Double previousStudyPointsMultiplier = answeredQuestion.getStudyPointsMultiplier();
+        if(isStudied(answeredQuestion)) {
+            answeredQuestion.setStudyPoints(
+                    previousStudyPoints + WRONG_ANSWER_INCREMENT * answeredQuestion.getStudyPointsMultiplier());
+        } else {
+            answeredQuestion.setStudyPoints(previousStudyPoints + WRONG_ANSWER_INCREMENT);
+        }
+        answeredQuestion.setStudyPointsMultiplier(STUDY_POINTS_INIT_MULTIPLIER);
         recalculateRandomizer(POWER);
 
         LOGGER.info(
                 String.format(
                         "%sWrong answer the question %d %s probFactor: [%#.1f => %#.1f], probMultiplier: [%#.2f => %#.2f]",
                         rollback ? "Rollbacked with " : "", answeredQuestion.getId(), answeredQuestion.getWords(),
-                        previousProbabilityFactor, answeredQuestion.getProbabilityFactor(), previousProbabilityMultiplier,
-                        answeredQuestion.getProbabilityMultiplier()
+                        previousStudyPoints, answeredQuestion.getStudyPoints(), previousStudyPointsMultiplier,
+                        answeredQuestion.getStudyPointsMultiplier()
                 ));
 
         answeredQuestion.setLastAccessed(LocalDateTime.now());

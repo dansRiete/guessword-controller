@@ -29,10 +29,10 @@ public class Question implements BaseQuestion {
     private Integer id;
 
     @Column(nullable = false)
-    private Double probabilityFactor;
+    private Double studyPoints;
 
     @Column(nullable = false)
-    private Double probabilityMultiplier;
+    private Double studyPointsMultiplier;
 
     @Column(nullable = false)
     private LocalDateTime created;

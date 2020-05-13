@@ -93,8 +93,8 @@ public class QuestionDao {
                 .addValue("creation_date", Timestamp.from(questionToCreate.getCreationDate().toInstant(ZoneOffset.UTC)));*/
         mapSqlParameterSource.addValue("language_1", /*todo languages*/"en");
         mapSqlParameterSource.addValue("language_2", /*todo languages*/"ru");
-        mapSqlParameterSource.addValue("probability_factor", questionToCreate.getProbabilityFactor());
-        mapSqlParameterSource.addValue("probability_multiplier", questionToCreate.getProbabilityMultiplier());
+        mapSqlParameterSource.addValue("probability_factor", questionToCreate.getStudyPoints());
+        mapSqlParameterSource.addValue("probability_multiplier", questionToCreate.getStudyPointsMultiplier());
         mapSqlParameterSource.addValue("last_access_date", questionToCreate.getLastAccessed());
         mapSqlParameterSource.addValue("label", questionToCreate.getTag());
 
@@ -171,8 +171,8 @@ public class QuestionDao {
                     final Question question = Question.builder()
                         .id(rs.getInt("id"))
                         .created(DateTimeUtils.toLocalDateTime(rs.getTimestamp("create_date")))
-                        .probabilityFactor(probabilityFactor)
-                        .probabilityMultiplier(probabilityMultiplier)
+                        .studyPoints(probabilityFactor)
+                        .studyPointsMultiplier(probabilityMultiplier)
                         .lastAccessed(lastAccessDate)
                         .tag(label).build();
 
@@ -204,8 +204,8 @@ public class QuestionDao {
 
                     final Question question = Question.builder()
                         .id(rs.getInt("id"))
-                        .probabilityFactor(probabilityFactor)
-                        .probabilityMultiplier(probabilityMultiplier)
+                        .studyPoints(probabilityFactor)
+                        .studyPointsMultiplier(probabilityMultiplier)
                         .created(DateTimeUtils.toLocalDateTime(rs.getTimestamp("create_date")))
                         .lastAccessed(lastAccessDate)
                         .tag(label)
