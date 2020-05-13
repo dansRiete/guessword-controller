@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: guessword-2
+
+postgres.datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5433/webguessword-2
+    username: postgres
+    password: postgres
+
+mysql.datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:32768/guessword
+    username: root
+    password: mysql
+
+server:
+  contextPath: /api
+
+#liquibase.change-log: classpath:db/changelog.xml
