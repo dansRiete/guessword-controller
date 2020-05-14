@@ -9,5 +9,6 @@ public class ApplicationConstants {
     public static final double WRONG_ANSWER_INCREMENT = STUDY_COMPLETION_THRESHOLD * 2;
     public static final int STUDIED_QUESTIONS_PROBABILITY = 5; // per 100 cases
     public static final int PROBABILITY_ADJUSTING = 10;
+    public static final int PROBABILITY_OF_ALREADY_ANSWERED = 3;
 
 }

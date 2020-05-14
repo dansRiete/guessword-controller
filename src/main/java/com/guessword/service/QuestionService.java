@@ -22,10 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -56,7 +53,7 @@ public class QuestionService {
 
     private final Map<Integer, QuestionLikelihood> nonLearnedQuestions = new HashMap<>();
     private final Map<Integer, QuestionLikelihood> learnedQuestions = new HashMap<>();
-    private final Map<Integer, Answer> answers = new HashMap<>();
+    private final List<Answer> answers = new LinkedList<>();
 
     private Map<Integer, Question> questionMap;
     private Question questionToRollback;
@@ -164,18 +161,20 @@ public class QuestionService {
 
     public QuestionDto getRandom() {
 
-        long currentRange = RandomUtils.nextLong(0, currentMaxIndex + 1);
         QuestionLikelihood selectedQuestion = null;
 
         if (RandomUtils.nextInt(0, 100 * PROBABILITY_ADJUSTING + 1) <= STUDIED_QUESTIONS_PROBABILITY * PROBABILITY_ADJUSTING) {
             Object[] questions = learnedQuestions.values().toArray();
             selectedQuestion = (QuestionLikelihood) questions[RandomUtils.nextInt(0, questions.length)];
         } else {
-            for (QuestionLikelihood question : nonLearnedQuestions.values()) {
-                if (question.isInRange(currentRange)) {
-                    selectedQuestion = question;
+            do {
+                long currentRange = RandomUtils.nextLong(0, currentMaxIndex + 1);
+                for (QuestionLikelihood question : nonLearnedQuestions.values()) {
+                    if (question.isInRange(currentRange) && !recentlyAnswered(question.getId())) {
+                        selectedQuestion = question;
+                    }
                 }
-            }
+            } while (selectedQuestion == null);
         }
 
         if (selectedQuestion == null) {
@@ -222,9 +221,18 @@ public class QuestionService {
         Answer answer = Answer.builder().answered(LocalDateTime.now())
                 .question(updatedQuestion).correct(correct).build();
         answer = answerRepository.saveAndFlush(answer);
-        answers.put(answer.getId(), answer);
+        answers.add(0, answer);
 
         return questionMapper.toDto(updatedQuestion);
+    }
+
+    private boolean recentlyAnswered(int id) {
+        for (int i = 0; i < answers.size(); i++) {
+            if (id == answers.get(i).getQuestion().getId() && i < nonLearnedQuestions.size() / PROBABILITY_OF_ALREADY_ANSWERED) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Question rightAnswer(Question answeredQuestion, boolean rollback) {
