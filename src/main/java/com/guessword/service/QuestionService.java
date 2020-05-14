@@ -36,6 +36,7 @@ import static com.guessword.utils.QuestionUtils.isStudied;
  * Contains all the logic for randomizing questions, ensuring the calculation of the probability of asking questions
  * depending on external conditions such as: the number of questions already studied and not studied, the category of
  * currently selected questions and others ...
+ *
  * @author Oleksii Kuzko. 9 April 2020.
  */
 @Service
@@ -77,7 +78,7 @@ public class QuestionService {
         long startTime = System.currentTimeMillis();
         final List<Question> allMysqlQuestions = questionDao.getAllMysql();
         LOGGER.info("Fetched all from MySQL. Time: {} ms. Found: {}",
-            System.currentTimeMillis() - startTime, allMysqlQuestions.size());
+                System.currentTimeMillis() - startTime, allMysqlQuestions.size());
         return questionMapper.toDto(allMysqlQuestions);
     }
 
@@ -96,11 +97,11 @@ public class QuestionService {
     public void init() {
         long startTime = System.currentTimeMillis();
         questionMap = questionRepository.findAll().stream().collect(
-            Collectors.toMap(Question::getId, Function.identity())
+                Collectors.toMap(Question::getId, Function.identity())
         );
         recalculateRandomizer(POWER);
         LOGGER.info(String.format("QuestionEngine has been initialized. Questions size: %d - Time: %d ms.",
-            questionMap.values().size(), System.currentTimeMillis() - startTime)
+                questionMap.values().size(), System.currentTimeMillis() - startTime)
         );
     }
 
@@ -120,15 +121,15 @@ public class QuestionService {
         for (Question question : questionMap.values()) {
             double poweredProbFactor;
             QuestionLikelihood questionLikelihood =
-                new QuestionLikelihood(
-                    question.getId(),
-                    question.getStudyPoints(),
-                    poweredProbFactor = Math.pow(question.getStudyPoints(), power),
-                    -1,
-                    -1,
-                    -1,
-                    -1
-                );
+                    new QuestionLikelihood(
+                            question.getId(),
+                            question.getStudyPoints(),
+                            poweredProbFactor = Math.pow(question.getStudyPoints(), power),
+                            -1,
+                            -1,
+                            -1,
+                            -1
+                    );
             if (question.getStudyPoints() <= LEARNED_QUESTION_PROB_MARGIN) {
                 learnedQuestions.put(learnedIndexes++, questionLikelihood);
                 continue;   // Do not perform calculation for already learned questions
@@ -151,11 +152,11 @@ public class QuestionService {
             LOGGER.warn("Questions' indexes recalculating with fault. End index was: {}", index);
         }
         LOGGER.debug("Questions' indexes has been recalculated. Non learned questions size: {}. Learned questions size:"
-                + " {}. Time: {} ms. Index end: {}",
-            questionMap.values().size(),
-            learnedQuestions.values().size(),
-            System.currentTimeMillis() - startTime,
-            index
+                        + " {}. Time: {} ms. Index end: {}",
+                questionMap.values().size(),
+                learnedQuestions.values().size(),
+                System.currentTimeMillis() - startTime,
+                index
         );
         currentMaxIndex = index;
         return Arrays.asList(nonLearnedQuestions, learnedQuestions);
@@ -166,19 +167,24 @@ public class QuestionService {
         long currentRange = RandomUtils.nextLong(0, currentMaxIndex + 1);
         QuestionLikelihood selectedQuestion = null;
 
-        for(QuestionLikelihood question : nonLearnedQuestions.values()) {
-            if (question.isInRange(currentRange)){
-                selectedQuestion = question;
+        if (RandomUtils.nextInt(0, 100 * PROBABILITY_ADJUSTING + 1) <= STUDIED_QUESTIONS_PROBABILITY * PROBABILITY_ADJUSTING) {
+            Object[] questions = learnedQuestions.values().toArray();
+            selectedQuestion = (QuestionLikelihood) questions[RandomUtils.nextInt(0, questions.length)];
+        } else {
+            for (QuestionLikelihood question : nonLearnedQuestions.values()) {
+                if (question.isInRange(currentRange)) {
+                    selectedQuestion = question;
+                }
             }
         }
 
-        if(selectedQuestion == null) {
+        if (selectedQuestion == null) {
             throw new RuntimeException("No question was selected");
         }
 
         final Question question = questionMap.get(selectedQuestion.getId());
 
-        if(question == null) {
+        if (question == null) {
             LOGGER.warn("Could not retrieve next. No question found");
             return null;
         }
@@ -225,18 +231,20 @@ public class QuestionService {
 
         Double previousStudyPoints = answeredQuestion.getStudyPoints();
         Double previousStudyPointsMultiplier = answeredQuestion.getStudyPointsMultiplier();
-        answeredQuestion.setStudyPoints(previousStudyPoints - RIGHT_ANSWER_DECREMENT * previousStudyPointsMultiplier);
-        answeredQuestion.setStudyPointsMultiplier(
-                previousStudyPointsMultiplier == STUDY_POINTS_INIT_MULTIPLIER ? STUDY_POINTS_MULTIPLIER :
-                        previousStudyPointsMultiplier * STUDY_POINTS_MULTIPLIER
-        );
+        if (!isStudied(answeredQuestion)) {
+            answeredQuestion.setStudyPoints(previousStudyPoints - RIGHT_ANSWER_DECREMENT * previousStudyPointsMultiplier);
+            answeredQuestion.setStudyPointsMultiplier(
+                    previousStudyPointsMultiplier == STUDY_POINTS_INIT_MULTIPLIER ? STUDY_POINTS_MULTIPLIER :
+                            previousStudyPointsMultiplier * STUDY_POINTS_MULTIPLIER
+            );
+        }
 
         LOGGER.info(String.format(
-                        "%sRight answered the question %d %s probFactor: [%#.1f => %#.1f], probMultiplier: [%#.2f => %#.2f]",
-                        rollback ? "Rollbacked with " : "", answeredQuestion.getId(), answeredQuestion.getWords(),
-                        previousStudyPoints, answeredQuestion.getStudyPoints(),
-                        previousStudyPointsMultiplier, answeredQuestion.getStudyPointsMultiplier()
-                ));
+                "%sRight answered the question %d %s probFactor: [%#.1f => %#.1f], probMultiplier: [%#.2f => %#.2f]",
+                rollback ? "Rollbacked with " : "", answeredQuestion.getId(), answeredQuestion.getWords(),
+                previousStudyPoints, answeredQuestion.getStudyPoints(),
+                previousStudyPointsMultiplier, answeredQuestion.getStudyPointsMultiplier()
+        ));
 
         answeredQuestion.setLastAccessed(LocalDateTime.now());
         Question updatedQuestion = questionRepository.saveAndFlush(answeredQuestion);
@@ -249,7 +257,7 @@ public class QuestionService {
 
         Double previousStudyPoints = answeredQuestion.getStudyPoints();
         Double previousStudyPointsMultiplier = answeredQuestion.getStudyPointsMultiplier();
-        if(isStudied(answeredQuestion)) {
+        if (isStudied(answeredQuestion)) {
             answeredQuestion.setStudyPoints(
                     previousStudyPoints + WRONG_ANSWER_INCREMENT * answeredQuestion.getStudyPointsMultiplier());
         } else {
