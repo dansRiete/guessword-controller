@@ -230,7 +230,6 @@ public class QuestionService {
                 previousStudyPointsMultiplier == STUDY_POINTS_INIT_MULTIPLIER ? STUDY_POINTS_MULTIPLIER :
                         previousStudyPointsMultiplier * STUDY_POINTS_MULTIPLIER
         );
-        recalculateRandomizer(POWER);
 
         LOGGER.info(String.format(
                         "%sRight answered the question %d %s probFactor: [%#.1f => %#.1f], probMultiplier: [%#.2f => %#.2f]",
@@ -242,6 +241,7 @@ public class QuestionService {
         answeredQuestion.setLastAccessed(LocalDateTime.now());
         Question updatedQuestion = questionRepository.saveAndFlush(answeredQuestion);
         questionMap.put(updatedQuestion.getId(), updatedQuestion);
+        recalculateRandomizer(POWER);
         return updatedQuestion;
     }
 
@@ -256,7 +256,6 @@ public class QuestionService {
             answeredQuestion.setStudyPoints(previousStudyPoints + WRONG_ANSWER_INCREMENT);
         }
         answeredQuestion.setStudyPointsMultiplier(STUDY_POINTS_INIT_MULTIPLIER);
-        recalculateRandomizer(POWER);
 
         LOGGER.info(
                 String.format(
@@ -269,6 +268,7 @@ public class QuestionService {
         answeredQuestion.setLastAccessed(LocalDateTime.now());
         Question updatedQuestion = questionRepository.saveAndFlush(answeredQuestion);
         questionMap.put(updatedQuestion.getId(), updatedQuestion);
+        recalculateRandomizer(POWER);
         return updatedQuestion;
     }
 

@@ -1,34 +1,3 @@
-drop table if exists main.word;
-drop table if exists main.answer;
-drop table if exists main.question;
-drop table if exists security.principal;
-
-create table security.principal
-(
-    user_id varchar(255) not null
-        constraint principal_pkey
-            primary key,
-    email varchar(255) not null,
-    name varchar(255) not null,
-    password varchar(255) not null
-);
-
-alter table security.principal owner to alexkz;
-
-
-
-create table main.question
-(
-    id                     integer          not null
-        constraint question_pkey
-            primary key,
-    created                timestamp        not null,
-    last_accessed          timestamp,
-    study_points     double precision not null,
-    study_points_multiplier double precision not null,
-    tag                    varchar(255)
-);
-
 INSERT INTO main.question (id, created, last_accessed, study_points, study_points_multiplier, tag) VALUES (1, '2015-10-08 23:10:32.000000', '2016-07-10 12:40:16.000000', 6.21, 1, null);
 INSERT INTO main.question (id, created, last_accessed, study_points, study_points_multiplier, tag) VALUES (2, '2015-10-08 23:10:32.000000', '2016-12-10 12:11:08.000000', 9.25, 1.21, null);
 INSERT INTO main.question (id, created, last_accessed, study_points, study_points_multiplier, tag) VALUES (3, '2015-10-08 23:10:32.000000', '2016-11-11 12:19:14.000000', 6.15, 1.21, null);
@@ -3057,18 +3026,11 @@ INSERT INTO main.question (id, created, last_accessed, study_points, study_point
 INSERT INTO main.question (id, created, last_accessed, study_points, study_points_multiplier, tag) VALUES (3026, '2019-11-05 23:25:32.000000', null, 30, 1, null);
 INSERT INTO main.question (id, created, last_accessed, study_points, study_points_multiplier, tag) VALUES (3027, '2019-11-05 23:26:07.000000', null, 30, 1, null);
 
-create table main.word
-(
-    id            integer      not null
-        constraint word_pkey
-            primary key,
-    language      varchar(255) not null,
-    transcription varchar(255),
-    word          varchar(255) not null,
-    question_id   integer
-        constraint fkcy96wjgxmw4rqcft408txuhfd
-            references main.question
-);
+
+
+
+
+
 INSERT INTO main.word (id, language, transcription, word, question_id) VALUES (152, 'en', null, 'some', 70);
 INSERT INTO main.word (id, language, transcription, word, question_id) VALUES (569, 'en', null, 'palm', 271);
 INSERT INTO main.word (id, language, transcription, word, question_id) VALUES (1199, 'en', null, 'bet,bet,bet', 573);
@@ -9501,16 +9463,3 @@ INSERT INTO main.word (id, language, transcription, word, question_id) VALUES (6
 INSERT INTO main.word (id, language, transcription, word, question_id) VALUES (6430, 'en', null, 'reign', 3027);
 INSERT INTO main.word (id, language, transcription, word, question_id) VALUES (6431, 'ru', null, 'царствовать', 3027);
 INSERT INTO main.word (id, language, transcription, word, question_id) VALUES (6432, 'ru', null, 'царствование', 3027);
-
-create table main.answer
-(
-    id          integer   not null
-        constraint answer_pkey
-            primary key,
-    answered    timestamp not null,
-    correct     boolean   not null,
-    question_id integer
-        constraint fk8frr4bcabmmeyyu60qt7iiblo
-            references main.question
-);
-
