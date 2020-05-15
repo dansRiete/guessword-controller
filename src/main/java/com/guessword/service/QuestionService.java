@@ -11,7 +11,6 @@ import com.guessword.entity.Question;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
@@ -41,8 +40,8 @@ public class QuestionService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(QuestionService.class);
     private static final double CHANCE_OF_APPEARING_TRAINED_PHRASES = 1D / 35D;
-    private static final double POWER = 1.25;
-    private static final int MAX_RANGE = 1_000_000;
+    private static final double POWER = 1.75;
+    private static int MAX_RANGE = 1_000_000;
     private static final int LEARNED_QUESTION_PROB_MARGIN = 3;
     private static final double ALLOWABLE_INDEX_ERROR_FACTOR = 0.95;
 
@@ -96,6 +95,7 @@ public class QuestionService {
         questionMap = questionRepository.findAll().stream().collect(
                 Collectors.toMap(Question::getId, Function.identity())
         );
+        MAX_RANGE = questionMap.values().size() * PROBABILITY_ADJUSTING;
         recalculateRandomizer(POWER);
         LOGGER.info(String.format("QuestionEngine has been initialized. Questions size: %d - Time: %d ms.",
                 questionMap.values().size(), System.currentTimeMillis() - startTime)
@@ -120,6 +120,7 @@ public class QuestionService {
             QuestionLikelihood questionLikelihood =
                     new QuestionLikelihood(
                             question.getId(),
+                            question.getWords().toString(),
                             question.getStudyPoints(),
                             poweredProbFactor = Math.pow(question.getStudyPoints(), power),
                             -1,
@@ -131,7 +132,7 @@ public class QuestionService {
                 learnedQuestions.put(learnedIndexes++, questionLikelihood);
                 continue;   // Do not perform calculation for already learned questions
             }
-            nonLearnedQuestions.put(questionLikelihood.getId(), questionLikelihood);
+            nonLearnedQuestions.put(questionLikelihood.getQuestionId(), questionLikelihood);
             poweredProbFactorSum += poweredProbFactor;
         }
 
@@ -170,7 +171,7 @@ public class QuestionService {
             do {
                 long currentRange = RandomUtils.nextLong(0, currentMaxIndex + 1);
                 for (QuestionLikelihood question : nonLearnedQuestions.values()) {
-                    if (question.isInRange(currentRange) && !recentlyAnswered(question.getId())) {
+                    if (question.isInRange(currentRange) && !recentlyAnswered(question.getQuestionId())) {
                         selectedQuestion = question;
                     }
                 }
@@ -181,7 +182,7 @@ public class QuestionService {
             throw new RuntimeException("No question was selected");
         }
 
-        final Question question = questionMap.get(selectedQuestion.getId());
+        final Question question = questionMap.get(selectedQuestion.getQuestionId());
 
         if (question == null) {
             LOGGER.warn("Could not retrieve next. No question found");
@@ -290,10 +291,10 @@ public class QuestionService {
 
     @Getter
     @Setter
-    @ToString
     @AllArgsConstructor
     public static class QuestionLikelihood {
-        int id;
+        int questionId;
+        String words;
         double probabilityFactor;
         double poweredProbabilityFactor;
         double percentage;
@@ -303,6 +304,14 @@ public class QuestionService {
 
         public boolean isInRange(long range) {
             return range >= indexStart && range <= indexEnd;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("QuestionLikelihood{questionId=%d, words='%s'," +
+                    " studyPoints=%.1f, indexStart=%d, indexEnd=%d}",
+                    questionId, words, probabilityFactor, indexStart, indexEnd
+            );
         }
     }
 }
