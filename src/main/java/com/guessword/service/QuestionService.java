@@ -115,7 +115,9 @@ public class QuestionService {
         double poweredProbFactorSum = 0;
         int learnedIndexes = 0;
 
-        for (Question question : questionMap.values()) {
+        List<Question> questions = new ArrayList<>(questionMap.values());
+        Collections.shuffle(questions);
+        for (Question question : questions) {
             double poweredProbFactor;
             QuestionLikelihood questionLikelihood =
                     new QuestionLikelihood(
@@ -151,7 +153,7 @@ public class QuestionService {
         }
         LOGGER.debug("Questions' indexes has been recalculated. Non learned questions size: {}. Learned questions size:"
                         + " {}. Time: {} ms. Index end: {}",
-                questionMap.values().size(),
+                questions.size(),
                 learnedQuestions.values().size(),
                 System.currentTimeMillis() - startTime,
                 index
