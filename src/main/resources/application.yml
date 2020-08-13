@@ -11,7 +11,7 @@ spring:
 
 postgres.datasource:
     driver-class-name: org.postgresql.Driver
-    jdbc-url: jdbc:postgresql://localhost:5432/guessword
+    jdbc-url: jdbc:postgresql://localhost:5432/guessword-test
     username: alexkz
     password: vlenaf13
 

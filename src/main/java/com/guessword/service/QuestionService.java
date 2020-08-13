@@ -41,6 +41,8 @@ public class QuestionService {
     private static final Logger LOGGER = LoggerFactory.getLogger(QuestionService.class);
     private static final double CHANCE_OF_APPEARING_TRAINED_PHRASES = 1D / 35D;
     private static final double POWER = 1.75;
+    public static final int MAX_RETRY_ATTEMPTS = 100;
+    public static final int LIMITED_QUESTION_NUMBER = 300;
     private static int MAX_RANGE = 1_000_000;
     private static final int LEARNED_QUESTION_PROB_MARGIN = 3;
     private static final double ALLOWABLE_INDEX_ERROR_FACTOR = 0.95;
@@ -54,9 +56,9 @@ public class QuestionService {
     private final Map<Integer, QuestionLikelihood> learnedQuestions = new HashMap<>();
     private final List<Answer> answers = new LinkedList<>();
 
-    private Map<Integer, Question> questionMap;
+    private Map<Integer, Question> allQuestionMap;
+    private Map<Integer, Question> selectedQuestionMap;
     private Question questionToRollback;
-    private Answer answerToRollback;
     private long currentMaxIndex;
 
     public QuestionService(
@@ -92,19 +94,19 @@ public class QuestionService {
     @Transactional
     public void init() {
         long startTime = System.currentTimeMillis();
-        questionMap = questionRepository.findAll().stream().collect(
+        allQuestionMap = questionRepository.findAll().stream().collect(
                 Collectors.toMap(Question::getId, Function.identity())
         );
-        MAX_RANGE = questionMap.values().size() * PROBABILITY_ADJUSTING;
+        MAX_RANGE = allQuestionMap.values().size() * PROBABILITY_ADJUSTING;
         recalculateRandomizer(POWER);
         LOGGER.info(String.format("QuestionEngine has been initialized. Questions size: %d - Time: %d ms.",
-                questionMap.values().size(), System.currentTimeMillis() - startTime)
+                allQuestionMap.values().size(), System.currentTimeMillis() - startTime)
         );
     }
 
     public List<Map<Integer, QuestionLikelihood>> recalculateRandomizer(double power) {
 
-        if (MapUtils.isEmpty(questionMap)) {
+        if (MapUtils.isEmpty(allQuestionMap)) {
             LOGGER.warn("No questions in database. Recalculation was not performed.");
             return null;
         }
@@ -114,10 +116,16 @@ public class QuestionService {
         nonLearnedQuestions.clear();
         double poweredProbFactorSum = 0;
         int learnedIndexes = 0;
-
-        List<Question> questions = new ArrayList<>(questionMap.values());
+        List<Question> limitedQuestions = allQuestionMap.values().stream().filter(q -> !isStudied(q))
+                .limit(LIMITED_QUESTION_NUMBER)
+                .sorted(Comparator.comparing(Question::getCreated))
+                .collect(Collectors.toList());
+        List<Question> studiedQuestions = allQuestionMap.values().stream()
+                .filter(this::isStudied).collect(Collectors.toList());
+        limitedQuestions.addAll(studiedQuestions);
+        List<Question> questions = new ArrayList<>(allQuestionMap.values());
         Collections.shuffle(questions);
-        for (Question question : questions) {
+        for (Question question : limitedQuestions) {
             double poweredProbFactor;
             QuestionLikelihood questionLikelihood =
                     new QuestionLikelihood(
@@ -130,7 +138,7 @@ public class QuestionService {
                             -1,
                             -1
                     );
-            if (question.getStudyPoints() <= LEARNED_QUESTION_PROB_MARGIN) {
+            if (isStudied(question)) {
                 learnedQuestions.put(learnedIndexes++, questionLikelihood);
                 continue;   // Do not perform calculation for already learned questions
             }
@@ -162,6 +170,10 @@ public class QuestionService {
         return Arrays.asList(nonLearnedQuestions, learnedQuestions);
     }
 
+    private boolean isStudied(Question question) {
+        return question.getStudyPoints() <= LEARNED_QUESTION_PROB_MARGIN;
+    }
+
     public QuestionDto getRandom() {
 
         QuestionLikelihood selectedQuestion = null;
@@ -170,21 +182,23 @@ public class QuestionService {
             Object[] questions = learnedQuestions.values().toArray();
             selectedQuestion = (QuestionLikelihood) questions[RandomUtils.nextInt(0, questions.length)];
         } else {
+            int retryAttempts = 0;
             do {
+                retryAttempts++;
                 long currentRange = RandomUtils.nextLong(0, currentMaxIndex + 1);
                 for (QuestionLikelihood question : nonLearnedQuestions.values()) {
                     if (question.isInRange(currentRange) && !recentlyAnswered(question.getQuestionId())) {
                         selectedQuestion = question;
                     }
                 }
-            } while (selectedQuestion == null);
+            } while (selectedQuestion == null && retryAttempts < MAX_RETRY_ATTEMPTS);
         }
 
         if (selectedQuestion == null) {
             throw new RuntimeException("No question was selected");
         }
 
-        final Question question = questionMap.get(selectedQuestion.getQuestionId());
+        final Question question = allQuestionMap.get(selectedQuestion.getQuestionId());
 
         if (question == null) {
             LOGGER.warn("Could not retrieve next. No question found");
@@ -207,9 +221,9 @@ public class QuestionService {
 
         if (rollback) {
             answeredQuestion = questionToRollback.toBuilder().build();
-            questionMap.put(questionToRollback.getId(), questionToRollback.toBuilder().build());
+            allQuestionMap.put(questionToRollback.getId(), questionToRollback.toBuilder().build());
         } else {
-            answeredQuestion = questionMap.get(answeredQuestionDto.getId()).toBuilder().build();
+            answeredQuestion = allQuestionMap.get(answeredQuestionDto.getId()).toBuilder().build();
             questionToRollback = answeredQuestion.toBuilder().build();
         }
 
@@ -259,7 +273,7 @@ public class QuestionService {
 
         answeredQuestion.setLastAccessed(LocalDateTime.now());
         Question updatedQuestion = questionRepository.saveAndFlush(answeredQuestion);
-        questionMap.put(updatedQuestion.getId(), updatedQuestion);
+        allQuestionMap.put(updatedQuestion.getId(), updatedQuestion);
         recalculateRandomizer(POWER);
         return updatedQuestion;
     }
@@ -286,7 +300,7 @@ public class QuestionService {
 
         answeredQuestion.setLastAccessed(LocalDateTime.now());
         Question updatedQuestion = questionRepository.saveAndFlush(answeredQuestion);
-        questionMap.put(updatedQuestion.getId(), updatedQuestion);
+        allQuestionMap.put(updatedQuestion.getId(), updatedQuestion);
         recalculateRandomizer(POWER);
         return updatedQuestion;
     }
