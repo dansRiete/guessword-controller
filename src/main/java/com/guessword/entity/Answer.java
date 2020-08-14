@@ -24,7 +24,7 @@ public class Answer {
     private Integer id;
 
     @Column(nullable = false)
-    private LocalDateTime answered;
+    private LocalDateTime answered; //todo change to ZonedDateTime
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "questionId")

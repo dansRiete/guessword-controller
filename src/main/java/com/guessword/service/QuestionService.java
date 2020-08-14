@@ -38,11 +38,10 @@ import static com.guessword.utils.QuestionUtils.isStudied;
 @Service
 public class QuestionService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(QuestionService.class);
-    private static final double CHANCE_OF_APPEARING_TRAINED_PHRASES = 1D / 35D;
-    private static final double POWER = 1.75;
     public static final int MAX_RETRY_ATTEMPTS = 100;
     public static final int LIMITED_QUESTION_NUMBER = 300;
+    private static final Logger LOGGER = LoggerFactory.getLogger(QuestionService.class);
+    private static final double POWER = 1.75;
     private static int MAX_RANGE = 1_000_000;
     private static final int LEARNED_QUESTION_PROB_MARGIN = 3;
     private static final double ALLOWABLE_INDEX_ERROR_FACTOR = 0.95;
@@ -57,7 +56,6 @@ public class QuestionService {
     private final List<Answer> answers = new LinkedList<>();
 
     private Map<Integer, Question> allQuestionMap;
-    private Map<Integer, Question> selectedQuestionMap;
     private Question questionToRollback;
     private long currentMaxIndex;
 
@@ -177,17 +175,19 @@ public class QuestionService {
     public QuestionDto getRandom() {
 
         QuestionLikelihood selectedQuestion = null;
-
+        int retryAttempts = 0;
         if (RandomUtils.nextInt(0, 100 * PROBABILITY_ADJUSTING + 1) <= STUDIED_QUESTIONS_PROBABILITY * PROBABILITY_ADJUSTING) {
             Object[] questions = learnedQuestions.values().toArray();
             selectedQuestion = (QuestionLikelihood) questions[RandomUtils.nextInt(0, questions.length)];
         } else {
-            int retryAttempts = 0;
             do {
                 retryAttempts++;
                 long currentRange = RandomUtils.nextLong(0, currentMaxIndex + 1);
                 for (QuestionLikelihood question : nonLearnedQuestions.values()) {
-                    if (question.isInRange(currentRange) && !recentlyAnswered(question.getQuestionId())) {
+                    if (question.isInRange(currentRange)) {
+                        if (recentlyAnswered(question.getQuestionId())) {
+                            continue;
+                        }
                         selectedQuestion = question;
                     }
                 }
@@ -195,7 +195,7 @@ public class QuestionService {
         }
 
         if (selectedQuestion == null) {
-            throw new RuntimeException("No question was selected");
+            throw new RuntimeException(String.format("No question was selected, retry attempts: %d", retryAttempts));
         }
 
         final Question question = allQuestionMap.get(selectedQuestion.getQuestionId());
@@ -244,8 +244,11 @@ public class QuestionService {
     }
 
     private boolean recentlyAnswered(int id) {
-        for (int i = 0; i < answers.size(); i++) {
-            if (id == answers.get(i).getQuestion().getId() && i < nonLearnedQuestions.size() / PROBABILITY_OF_ALREADY_ANSWERED) {
+        List<Answer> lastAnswers = answers.stream()
+            .skip(answers.size() < 100 ? 0 : answers.size() - 100)
+            .collect(Collectors.toList());
+        for (int i = 0; i < lastAnswers.size(); i++) {
+            if (id == lastAnswers.get(i).getQuestion().getId()) {
                 return true;
             }
         }
