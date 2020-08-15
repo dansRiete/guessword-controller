@@ -15,6 +15,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.guessword.utils.ApplicationConstants.*;
-import static com.guessword.utils.QuestionUtils.isStudied;
 
 /**
  * Contains all the logic for randomizing questions, ensuring the calculation of the probability of asking questions
@@ -38,13 +38,28 @@ import static com.guessword.utils.QuestionUtils.isStudied;
 @Service
 public class QuestionService {
 
-    public static final int MAX_RETRY_ATTEMPTS = 100;
-    public static final int LIMITED_QUESTION_NUMBER = 300;
     private static final Logger LOGGER = LoggerFactory.getLogger(QuestionService.class);
-    private static final double POWER = 1.75;
-    private static int MAX_RANGE = 1_000_000;
-    private static final int LEARNED_QUESTION_PROB_MARGIN = 3;
-    private static final double ALLOWABLE_INDEX_ERROR_FACTOR = 0.95;
+
+    @Value("${qservice.non-repeatable-questions}")
+    public int nonRepeatableQuestions;
+
+    @Value("${qservice.max-retry-attempts}")
+    public int questionRetrievingMaxRetriesNumber;
+
+    @Value("${qservice.active-questions}")
+    public int activeQuestionsNumber;
+
+    @Value("${qservice.randomizer-factor}")
+    private double randomizingFactor;
+
+    @Value("${qservice.index-max-range}")
+    private int randomizingIndexesMaxRange;
+
+    @Value("${qservice.learned-margin}")
+    private int learnedStudyPointsThreshold;
+
+    @Value("${qservice.index-error}")
+    private double allowableIndexErrorFactor;
 
     private final QuestionDao questionDao;
     private final QuestionRepository questionRepository;
@@ -95,8 +110,8 @@ public class QuestionService {
         allQuestionMap = questionRepository.findAll().stream().collect(
                 Collectors.toMap(Question::getId, Function.identity())
         );
-        MAX_RANGE = allQuestionMap.values().size() * PROBABILITY_ADJUSTING;
-        recalculateRandomizer(POWER);
+        randomizingIndexesMaxRange = allQuestionMap.values().size() * PROBABILITY_ADJUSTING;
+        recalculateRandomizer(randomizingFactor);
         LOGGER.info(String.format("QuestionEngine has been initialized. Questions size: %d - Time: %d ms.",
                 allQuestionMap.values().size(), System.currentTimeMillis() - startTime)
         );
@@ -114,15 +129,18 @@ public class QuestionService {
         nonLearnedQuestions.clear();
         double poweredProbFactorSum = 0;
         int learnedIndexes = 0;
-        List<Question> limitedQuestions = allQuestionMap.values().stream().filter(q -> !isStudied(q))
-                .limit(LIMITED_QUESTION_NUMBER)
+        List<Question> alreadyAnsweredQuestions = answers.stream().limit(nonRepeatableQuestions)
+                .map(Answer::getQuestion).collect(Collectors.toList());
+        List<Question> limitedQuestions = allQuestionMap.values().stream()
+                .filter(q -> !isStudied(q))
+                .filter(q -> !alreadyAnsweredQuestions.contains(q))
                 .sorted(Comparator.comparing(Question::getCreated))
+                .limit(activeQuestionsNumber)
                 .collect(Collectors.toList());
         List<Question> studiedQuestions = allQuestionMap.values().stream()
                 .filter(this::isStudied).collect(Collectors.toList());
         limitedQuestions.addAll(studiedQuestions);
-        List<Question> questions = new ArrayList<>(allQuestionMap.values());
-        Collections.shuffle(questions);
+        Collections.shuffle(limitedQuestions);
         for (Question question : limitedQuestions) {
             double poweredProbFactor;
             QuestionLikelihood questionLikelihood =
@@ -146,20 +164,20 @@ public class QuestionService {
 
         long index = -1;
         for (QuestionLikelihood question : nonLearnedQuestions.values()) {
-            if (question.getProbabilityFactor() <= LEARNED_QUESTION_PROB_MARGIN) {
+            if (question.getProbabilityFactor() <= learnedStudyPointsThreshold) {
                 continue;
             }
             question.setPercentage(question.getPoweredProbabilityFactor() / poweredProbFactorSum);
-            question.setRange(Math.round(MAX_RANGE * question.getPercentage()));
+            question.setRange(Math.round(randomizingIndexesMaxRange * question.getPercentage()));
             question.setIndexStart(++index);
             question.setIndexEnd(index = index + question.getRange() - 1);
         }
-        if (index < MAX_RANGE * ALLOWABLE_INDEX_ERROR_FACTOR) {
+        if (index < randomizingIndexesMaxRange * allowableIndexErrorFactor) {
             LOGGER.warn("Questions' indexes recalculating with fault. End index was: {}", index);
         }
         LOGGER.debug("Questions' indexes has been recalculated. Non learned questions size: {}. Learned questions size:"
                         + " {}. Time: {} ms. Index end: {}",
-                questions.size(),
+                limitedQuestions.size(),
                 learnedQuestions.values().size(),
                 System.currentTimeMillis() - startTime,
                 index
@@ -169,7 +187,7 @@ public class QuestionService {
     }
 
     private boolean isStudied(Question question) {
-        return question.getStudyPoints() <= LEARNED_QUESTION_PROB_MARGIN;
+        return question.getStudyPoints() <= learnedStudyPointsThreshold;
     }
 
     public QuestionDto getRandom() {
@@ -185,13 +203,13 @@ public class QuestionService {
                 long currentRange = RandomUtils.nextLong(0, currentMaxIndex + 1);
                 for (QuestionLikelihood question : nonLearnedQuestions.values()) {
                     if (question.isInRange(currentRange)) {
-                        if (recentlyAnswered(question.getQuestionId())) {
+                        /*if (recentlyAnswered(question.getQuestionId())) {
                             continue;
-                        }
+                        }*/
                         selectedQuestion = question;
                     }
                 }
-            } while (selectedQuestion == null && retryAttempts < MAX_RETRY_ATTEMPTS);
+            } while (selectedQuestion == null && retryAttempts < questionRetrievingMaxRetriesNumber);
         }
 
         if (selectedQuestion == null) {
@@ -277,7 +295,7 @@ public class QuestionService {
         answeredQuestion.setLastAccessed(LocalDateTime.now());
         Question updatedQuestion = questionRepository.saveAndFlush(answeredQuestion);
         allQuestionMap.put(updatedQuestion.getId(), updatedQuestion);
-        recalculateRandomizer(POWER);
+        recalculateRandomizer(randomizingFactor);
         return updatedQuestion;
     }
 
@@ -304,7 +322,7 @@ public class QuestionService {
         answeredQuestion.setLastAccessed(LocalDateTime.now());
         Question updatedQuestion = questionRepository.saveAndFlush(answeredQuestion);
         allQuestionMap.put(updatedQuestion.getId(), updatedQuestion);
-        recalculateRandomizer(POWER);
+        recalculateRandomizer(randomizingFactor);
         return updatedQuestion;
     }
 
