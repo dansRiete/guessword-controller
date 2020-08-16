@@ -20,7 +20,8 @@ import lombok.Setter;
 public class Answer {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "answer_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "answer_sq")
+    @SequenceGenerator(schema = "main", sequenceName = "answer_sq", name = "answer_sq", allocationSize = 1)
     private Integer id;
 
     @Column(nullable = false)

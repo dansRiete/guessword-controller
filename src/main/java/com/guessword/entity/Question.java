@@ -25,7 +25,8 @@ import javax.persistence.*;
 public class Question implements BaseQuestion {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "question_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "question_sq")
+    @SequenceGenerator(schema = "main", sequenceName = "question_sq", name = "question_sq", allocationSize = 1)
     private Integer id;
 
     @Column(nullable = false)

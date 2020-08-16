@@ -19,7 +19,8 @@ import lombok.Setter;
 public class Word {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "word_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "word_sq")
+    @SequenceGenerator(schema = "main", sequenceName = "word_sq", name = "word_sq", allocationSize = 1)
     private Integer id;
 
     @Column(nullable = false)
