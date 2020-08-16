@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.List;
 
@@ -19,7 +20,7 @@ import javax.persistence.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-@ToString
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
 @Table(schema = "main")
 public class Question implements BaseQuestion {
@@ -27,23 +28,26 @@ public class Question implements BaseQuestion {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "question_sq")
     @SequenceGenerator(schema = "main", sequenceName = "question_sq", name = "question_sq", allocationSize = 1)
+    @ToString.Include
     private Integer id;
 
     @Column(nullable = false)
+    @ToString.Include
     private Double studyPoints;
 
     @Column(nullable = false)
     private Double studyPointsMultiplier;
 
     @Column(nullable = false)
-    private LocalDateTime created;
+    private ZonedDateTime created;
 
-    private LocalDateTime lastAccessed;
+    private ZonedDateTime lastAccessed;
 
     private String tag;
 
     @OneToMany(cascade = CascadeType.ALL,fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinColumn(name = "question_id")
+    @ToString.Include
     private List<Word> words;
 
     @JsonIgnore

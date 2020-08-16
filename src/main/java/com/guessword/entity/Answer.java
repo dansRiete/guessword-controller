@@ -1,8 +1,17 @@
 package com.guessword.entity;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
-import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +34,7 @@ public class Answer {
     private Integer id;
 
     @Column(nullable = false)
-    private LocalDateTime answered; //todo change to ZonedDateTime
+    private ZonedDateTime answered;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "questionId")

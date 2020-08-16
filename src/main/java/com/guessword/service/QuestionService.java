@@ -1,12 +1,25 @@
 package com.guessword.service;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.guessword.dao.AnswerRepository;
 import com.guessword.dao.QuestionDao;
 import com.guessword.dao.QuestionRepository;
-import com.guessword.entity.Answer;
-import com.guessword.entity.BaseQuestion;
 import com.guessword.dto.QuestionDto;
 import com.guessword.dto.mapper.QuestionMapper;
+import com.guessword.entity.Answer;
+import com.guessword.entity.BaseQuestion;
 import com.guessword.entity.Question;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,12 +34,12 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static com.guessword.utils.ApplicationConstants.*;
+import static com.guessword.utils.ApplicationConstants.PROBABILITY_ADJUSTING;
+import static com.guessword.utils.ApplicationConstants.RIGHT_ANSWER_DECREMENT;
+import static com.guessword.utils.ApplicationConstants.STUDIED_QUESTIONS_PROBABILITY;
+import static com.guessword.utils.ApplicationConstants.STUDY_POINTS_INIT_MULTIPLIER;
+import static com.guessword.utils.ApplicationConstants.STUDY_POINTS_MULTIPLIER;
+import static com.guessword.utils.ApplicationConstants.WRONG_ANSWER_INCREMENT;
 
 /**
  * Contains all the logic for randomizing questions, ensuring the calculation of the probability of asking questions
@@ -112,7 +125,7 @@ public class QuestionService {
         );
         randomizingIndexesMaxRange = allQuestionMap.values().size() * PROBABILITY_ADJUSTING;
         recalculateRandomizer(randomizingFactor);
-        LOGGER.info(String.format("QuestionEngine has been initialized. Questions size: %d - Time: %d ms.",
+        LOGGER.info(String.format("QuestionEngine has been initialized. Total questions in database: %d. Time taken: %d ms.",
                 allQuestionMap.values().size(), System.currentTimeMillis() - startTime)
         );
     }
@@ -125,13 +138,12 @@ public class QuestionService {
         }
 
         long startTime = System.currentTimeMillis();
-
         nonLearnedQuestions.clear();
         double poweredProbFactorSum = 0;
         int learnedIndexes = 0;
         List<Question> alreadyAnsweredQuestions = answers.stream().limit(nonRepeatableQuestions)
                 .map(Answer::getQuestion).collect(Collectors.toList());
-        List<Question> limitedQuestions = allQuestionMap.values().stream()
+        List<Question> limitedNonStudiedQuestions = allQuestionMap.values().stream()
                 .filter(q -> !isStudied(q))
                 .filter(q -> !alreadyAnsweredQuestions.contains(q))
                 .sorted(Comparator.comparing(Question::getCreated))
@@ -139,9 +151,12 @@ public class QuestionService {
                 .collect(Collectors.toList());
         List<Question> studiedQuestions = allQuestionMap.values().stream()
                 .filter(this::isStudied).collect(Collectors.toList());
-        limitedQuestions.addAll(studiedQuestions);
-        Collections.shuffle(limitedQuestions);
-        for (Question question : limitedQuestions) {
+        List<Question> activeQuestions = Stream.concat(limitedNonStudiedQuestions.stream(), studiedQuestions.stream())
+            .collect(Collectors.toList());
+        Collections.shuffle(activeQuestions);
+
+        //  Populating studied, non-studied question map
+        for (Question question : activeQuestions) {
             double poweredProbFactor;
             QuestionLikelihood questionLikelihood =
                     new QuestionLikelihood(
@@ -162,6 +177,7 @@ public class QuestionService {
             poweredProbFactorSum += poweredProbFactor;
         }
 
+        //  Computing likelihood indexes.
         long index = -1;
         for (QuestionLikelihood question : nonLearnedQuestions.values()) {
             if (question.getProbabilityFactor() <= learnedStudyPointsThreshold) {
@@ -172,13 +188,16 @@ public class QuestionService {
             question.setIndexStart(++index);
             question.setIndexEnd(index = index + question.getRange() - 1);
         }
+
         if (index < randomizingIndexesMaxRange * allowableIndexErrorFactor) {
-            LOGGER.warn("Questions' indexes recalculating with fault. End index was: {}", index);
+            LOGGER.warn("Questions' indexes recalculating with fault. End index was: {}, max range {}, "
+                + "allowableIndexErrorFactor {}", index, randomizingIndexesMaxRange, allowableIndexErrorFactor);
         }
         LOGGER.debug("Questions' indexes has been recalculated. Non learned questions size: {}. Learned questions size:"
-                        + " {}. Time: {} ms. Index end: {}",
-                limitedQuestions.size(),
+                        + " {}. Total: {}. Time: {} ms. Index range: 0 - {}",
+                limitedNonStudiedQuestions.size(),
                 learnedQuestions.values().size(),
+                activeQuestions.size(),
                 System.currentTimeMillis() - startTime,
                 index
         );
@@ -253,7 +272,7 @@ public class QuestionService {
             updatedQuestion = wrongAnswer(answeredQuestion, rollback);
         }
 
-        Answer answer = Answer.builder().answered(LocalDateTime.now())
+        Answer answer = Answer.builder().answered(ZonedDateTime.now(ZoneId.of("UTC")))
                 .question(updatedQuestion).correct(correct).build();
         answer = answerRepository.saveAndFlush(answer);
         answers.add(0, answer);
@@ -292,7 +311,8 @@ public class QuestionService {
                 previousStudyPointsMultiplier, answeredQuestion.getStudyPointsMultiplier()
         ));
 
-        answeredQuestion.setLastAccessed(LocalDateTime.now());
+        // todo should we move setting lastAccessed to getRandom method?
+        answeredQuestion.setLastAccessed(ZonedDateTime.now(ZoneId.of("UTC")));
         Question updatedQuestion = questionRepository.saveAndFlush(answeredQuestion);
         allQuestionMap.put(updatedQuestion.getId(), updatedQuestion);
         recalculateRandomizer(randomizingFactor);
@@ -319,7 +339,7 @@ public class QuestionService {
                         answeredQuestion.getStudyPointsMultiplier()
                 ));
 
-        answeredQuestion.setLastAccessed(LocalDateTime.now());
+        answeredQuestion.setLastAccessed(ZonedDateTime.now());
         Question updatedQuestion = questionRepository.saveAndFlush(answeredQuestion);
         allQuestionMap.put(updatedQuestion.getId(), updatedQuestion);
         recalculateRandomizer(randomizingFactor);

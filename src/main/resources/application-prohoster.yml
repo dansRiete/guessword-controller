@@ -1,0 +1,2 @@
+postgres.datasource:
+  jdbc-url: jdbc:postgresql://185.212.128.246:5432/guessword

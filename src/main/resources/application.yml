@@ -8,10 +8,13 @@ spring:
     hibernate:
       ddl-auto: validate
     database: postgresql
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
 
 postgres.datasource:
     driver-class-name: org.postgresql.Driver
-    jdbc-url: jdbc:postgresql://185.212.128.246:5432/guessword
     username: guessword
     password: guessword<G13
 
@@ -33,3 +36,12 @@ qservice:
   index-max-range: 1000000
   active-questions: 600
   non-repeatable-questions: 300
+
+logging:
+  file:
+    enabled: true
+    path: /var/log/guessword
+    max-history: 90
+  level:
+    root: info
+    com.guessword: debug

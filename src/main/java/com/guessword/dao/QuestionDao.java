@@ -1,8 +1,23 @@
 package com.guessword.dao;
 
-import com.guessword.entity.Word;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import javax.sql.DataSource;
+
 import com.guessword.entity.Question;
 import com.guessword.entity.User;
+import com.guessword.entity.Word;
 import com.guessword.utils.DateTimeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -13,15 +28,6 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
-import javax.sql.DataSource;
 
 @Repository
 public class QuestionDao {
@@ -160,7 +166,7 @@ public class QuestionDao {
                 final User user = new User(rs.getString("login"), rs.getString("email"), rs.getString("name"),
                         rs.getString("password"));
 
-                LocalDateTime lastAccessDate = DateTimeUtils.toLocalDateTime(rs.getTimestamp("last_accs_date"));
+                ZonedDateTime lastAccessDate = ZonedDateTime.of(DateTimeUtils.toLocalDateTime(rs.getTimestamp("last_accs_date")), ZoneId.of("UTC"));
                 double probabilityFactor = new BigDecimal(rs.getFloat("prob_factor"))
                         .setScale(2, RoundingMode.UP).doubleValue();
                 double probabilityMultiplier = new BigDecimal(rs.getFloat("rate"))
@@ -170,7 +176,7 @@ public class QuestionDao {
 
                     final Question question = Question.builder()
                         .id(rs.getInt("id"))
-                        .created(DateTimeUtils.toLocalDateTime(rs.getTimestamp("create_date")))
+                        .created(ZonedDateTime.of(DateTimeUtils.toLocalDateTime(rs.getTimestamp("create_date")), ZoneId.of("UTC")))
                         .studyPoints(probabilityFactor)
                         .studyPointsMultiplier(probabilityMultiplier)
                         .lastAccessed(lastAccessDate)
@@ -206,7 +212,7 @@ public class QuestionDao {
                         .id(rs.getInt("id"))
                         .studyPoints(probabilityFactor)
                         .studyPointsMultiplier(probabilityMultiplier)
-                        .created(DateTimeUtils.toLocalDateTime(rs.getTimestamp("create_date")))
+                        .created(ZonedDateTime.of(DateTimeUtils.toLocalDateTime(rs.getTimestamp("create_date")), ZoneId.of("UTC")))
                         .lastAccessed(lastAccessDate)
                         .tag(label)
                         .words(Collections.unmodifiableList(words))
