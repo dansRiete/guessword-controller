@@ -7,9 +7,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.apache.commons.collections4.CollectionUtils;
 
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -45,10 +46,9 @@ public class Question implements BaseQuestion {
 
     private String tag;
 
-    @OneToMany(cascade = CascadeType.ALL,fetch = FetchType.EAGER, orphanRemoval = true)
-    @JoinColumn(name = "question_id")
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     @ToString.Include
-    private List<Word> words;
+    private List<Word> words = new ArrayList<>();
 
     @JsonIgnore
     @Transient
@@ -73,5 +73,14 @@ public class Question implements BaseQuestion {
         } else {
             return true;
         }
+    }
+
+    public void setWords(final List<Word> words) {
+        if (CollectionUtils.isEmpty(words)) {
+            return;
+        }
+        this.words.clear();
+        this.words.addAll(words);
+        this.words.forEach(word -> word.setQuestion(this));
     }
 }
