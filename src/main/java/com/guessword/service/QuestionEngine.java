@@ -124,11 +124,11 @@ public class QuestionEngine {
         activeNonLearnedQuestions.clear();
         double poweredProbFactorSum = 0;
         int learnedIndexes = 0;
-        List<Question> alreadyAnsweredQuestions = answers.stream().limit(nonRepeatableQuestions)
-                .map(Answer::getQuestion).collect(Collectors.toList());
+        List<Integer> alreadyAnsweredQuestions = answers.stream().limit(nonRepeatableQuestions)
+                .map(answer -> answer.getQuestion().getId()).collect(Collectors.toList());
         List<Question> limitedNonStudiedQuestions = questionService.getQuestionsCache().values().stream()
                 .filter(q -> !isStudied(q))
-                .filter(q -> !alreadyAnsweredQuestions.contains(q))
+                .filter(q -> !alreadyAnsweredQuestions.contains(q.getId()))
                 .sorted(Comparator.comparing(Question::getCreated))
                 .limit(activeQuestionsNumber)
                 .collect(Collectors.toList());

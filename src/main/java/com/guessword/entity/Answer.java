@@ -2,14 +2,13 @@ package com.guessword.entity;
 
 import java.time.ZonedDateTime;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
+import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
@@ -36,8 +35,7 @@ public class Answer {
     @Column(nullable = false)
     private ZonedDateTime answered;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "questionId")
+    @ManyToOne(fetch = FetchType.LAZY)
     private Question question;
 
     @Column(nullable = false)
