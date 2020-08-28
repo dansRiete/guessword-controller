@@ -9,18 +9,17 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.guessword.dao.AnswerRepository;
 import com.guessword.dao.QuestionDao;
-import com.guessword.dao.QuestionRepository;
 import com.guessword.dto.QuestionDto;
 import com.guessword.dto.mapper.QuestionMapper;
 import com.guessword.entity.Answer;
 import com.guessword.entity.BaseQuestion;
 import com.guessword.entity.Question;
+import com.guessword.exception.AnswerException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,10 +28,7 @@ import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import static com.guessword.utils.ApplicationConstants.PROBABILITY_ADJUSTING;
 import static com.guessword.utils.ApplicationConstants.RIGHT_ANSWER_DECREMENT;
@@ -75,25 +71,26 @@ public class QuestionEngine {
     private double allowableIndexErrorFactor;
 
     private final QuestionDao questionDao;
-    private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
     private final QuestionMapper questionMapper;
+    private final QuestionService questionService;
 
-    private final Map<Integer, QuestionLikelihood> nonLearnedQuestions = new HashMap<>();
-    private final Map<Integer, QuestionLikelihood> learnedQuestions = new HashMap<>();
+    private final Map<Integer, QuestionLikelihood> activeNonLearnedQuestions = new HashMap<>();
+    private final Map<Integer, QuestionLikelihood> activeLearnedQuestions = new HashMap<>();
     private final List<Answer> answers = new LinkedList<>();
 
-    private Map<Integer, Question> allQuestionMap;
     private Question questionToRollback;
+
     private long currentMaxIndex;
 
     public QuestionEngine(
-            final QuestionDao questionDao,
-            final QuestionRepository questionRepository,
-            AnswerRepository answerRepository, final QuestionMapper questionMapper
+        final QuestionDao questionDao,
+        final AnswerRepository answerRepository,
+        final QuestionMapper questionMapper,
+        final QuestionService questionService
     ) {
         this.questionDao = questionDao;
-        this.questionRepository = questionRepository;
+        this.questionService = questionService;
         this.answerRepository = answerRepository;
         this.questionMapper = questionMapper;
     }
@@ -106,7 +103,7 @@ public class QuestionEngine {
         return questionMapper.toDto(allMysqlQuestions);
     }
 
-    @Transactional
+    /*@Transactional
     public boolean copyAll() {
         long startTime = System.currentTimeMillis();
         List<Question> questions = questionDao.getAllMysql();
@@ -114,42 +111,28 @@ public class QuestionEngine {
         LOGGER.info("Copied all question from MySQL. Time: {} ms. Size: {}",
                 System.currentTimeMillis() - startTime, questions.size());
         return true;
-    }
-
-    @EventListener(ApplicationReadyEvent.class)
-    @Transactional
-    public void init() {
-        long startTime = System.currentTimeMillis();
-        allQuestionMap = questionRepository.findAll().stream().collect(
-                Collectors.toMap(Question::getId, Function.identity())
-        );
-        randomizingIndexesMaxRange = allQuestionMap.values().size() * PROBABILITY_ADJUSTING;
-        recalculateRandomizer(randomizingFactor);
-        LOGGER.info(String.format("QuestionEngine has been initialized. Total questions in database: %d. Time taken: %d ms.",
-                allQuestionMap.values().size(), System.currentTimeMillis() - startTime)
-        );
-    }
+    }*/
 
     public List<Map<Integer, QuestionLikelihood>> recalculateRandomizer(double power) {
 
-        if (MapUtils.isEmpty(allQuestionMap)) {
+        if (MapUtils.isEmpty(questionService.getQuestionsCache())) {
             LOGGER.warn("No questions in database. Recalculation was not performed.");
             return null;
         }
 
         long startTime = System.currentTimeMillis();
-        nonLearnedQuestions.clear();
+        activeNonLearnedQuestions.clear();
         double poweredProbFactorSum = 0;
         int learnedIndexes = 0;
         List<Question> alreadyAnsweredQuestions = answers.stream().limit(nonRepeatableQuestions)
                 .map(Answer::getQuestion).collect(Collectors.toList());
-        List<Question> limitedNonStudiedQuestions = allQuestionMap.values().stream()
+        List<Question> limitedNonStudiedQuestions = questionService.getQuestionsCache().values().stream()
                 .filter(q -> !isStudied(q))
                 .filter(q -> !alreadyAnsweredQuestions.contains(q))
                 .sorted(Comparator.comparing(Question::getCreated))
                 .limit(activeQuestionsNumber)
                 .collect(Collectors.toList());
-        List<Question> studiedQuestions = allQuestionMap.values().stream()
+        List<Question> studiedQuestions = questionService.getQuestionsCache().values().stream()
                 .filter(this::isStudied).collect(Collectors.toList());
         List<Question> activeQuestions = Stream.concat(limitedNonStudiedQuestions.stream(), studiedQuestions.stream())
             .collect(Collectors.toList());
@@ -170,16 +153,16 @@ public class QuestionEngine {
                             -1
                     );
             if (isStudied(question)) {
-                learnedQuestions.put(learnedIndexes++, questionLikelihood);
+                activeLearnedQuestions.put(learnedIndexes++, questionLikelihood);
                 continue;   // Do not perform calculation for already learned questions
             }
-            nonLearnedQuestions.put(questionLikelihood.getQuestionId(), questionLikelihood);
+            activeNonLearnedQuestions.put(questionLikelihood.getQuestionId(), questionLikelihood);
             poweredProbFactorSum += poweredProbFactor;
         }
 
         //  Computing likelihood indexes.
         long index = -1;
-        for (QuestionLikelihood question : nonLearnedQuestions.values()) {
+        for (QuestionLikelihood question : activeNonLearnedQuestions.values()) {
             if (question.getProbabilityFactor() <= learnedStudyPointsThreshold) {
                 continue;
             }
@@ -196,13 +179,13 @@ public class QuestionEngine {
         LOGGER.debug("Questions' indexes has been recalculated. Non learned questions size: {}. Learned questions size:"
                         + " {}. Total: {}. Time: {} ms. Index range: 0 - {}",
                 limitedNonStudiedQuestions.size(),
-                learnedQuestions.values().size(),
+                activeLearnedQuestions.values().size(),
                 activeQuestions.size(),
                 System.currentTimeMillis() - startTime,
                 index
         );
         currentMaxIndex = index;
-        return Arrays.asList(nonLearnedQuestions, learnedQuestions);
+        return Arrays.asList(activeNonLearnedQuestions, activeLearnedQuestions);
     }
 
     private boolean isStudied(Question question) {
@@ -211,16 +194,20 @@ public class QuestionEngine {
 
     public QuestionDto getRandom() {
 
+        if(activeLearnedQuestions.isEmpty() && activeNonLearnedQuestions.isEmpty()){
+            recalculateRandomizer(randomizingFactor);
+        }
+
         QuestionLikelihood selectedQuestion = null;
         int retryAttempts = 0;
         if (RandomUtils.nextInt(0, 100 * PROBABILITY_ADJUSTING + 1) <= STUDIED_QUESTIONS_PROBABILITY * PROBABILITY_ADJUSTING) {
-            Object[] questions = learnedQuestions.values().toArray();
+            Object[] questions = activeLearnedQuestions.values().toArray();
             selectedQuestion = (QuestionLikelihood) questions[RandomUtils.nextInt(0, questions.length)];
         } else {
             do {
                 retryAttempts++;
                 long currentRange = RandomUtils.nextLong(0, currentMaxIndex + 1);
-                for (QuestionLikelihood question : nonLearnedQuestions.values()) {
+                for (QuestionLikelihood question : activeNonLearnedQuestions.values()) {
                     if (question.isInRange(currentRange)) {
                         /*if (recentlyAnswered(question.getQuestionId())) {
                             continue;
@@ -235,7 +222,7 @@ public class QuestionEngine {
             throw new RuntimeException(String.format("No question was selected, retry attempts: %d", retryAttempts));
         }
 
-        final Question question = allQuestionMap.get(selectedQuestion.getQuestionId());
+        final Question question = questionService.getQuestionsCache().get(selectedQuestion.getQuestionId());
 
         if (question == null) {
             LOGGER.warn("Could not retrieve next. No question found");
@@ -258,9 +245,13 @@ public class QuestionEngine {
 
         if (rollback) {
             answeredQuestion = questionToRollback.toBuilder().build();
-            allQuestionMap.put(questionToRollback.getId(), questionToRollback.toBuilder().build());
+            questionService.getQuestionsCache().put(questionToRollback.getId(), questionToRollback.toBuilder().build());
         } else {
-            answeredQuestion = allQuestionMap.get(answeredQuestionDto.getId()).toBuilder().build();
+            Question questionFromCache = questionService.getQuestionsCache().get(answeredQuestionDto.getId());
+            if (questionFromCache == null) {
+                throw new AnswerException(String.format("Couldn't answer the question id: <%d>", answeredQuestionDto.getId()));
+            }
+            answeredQuestion = questionFromCache.toBuilder().build();
             questionToRollback = answeredQuestion.toBuilder().build();
         }
 
@@ -311,11 +302,11 @@ public class QuestionEngine {
                 previousStudyPointsMultiplier, answeredQuestion.getStudyPointsMultiplier()
         ));
 
-        // todo should we move setting lastAccessed to getRandom method?
-        answeredQuestion.setLastAccessed(ZonedDateTime.now(ZoneId.of("UTC")));
-        Question updatedQuestion = questionRepository.saveAndFlush(answeredQuestion);
-        allQuestionMap.put(updatedQuestion.getId(), updatedQuestion);
+        answeredQuestion.setLastAccessed(ZonedDateTime.now(ZoneId.of("UTC"))); // todo should we move setting lastAccessed to getRandom method?
+        Question updatedQuestion = questionService.updateQuestion(answeredQuestion);
+
         recalculateRandomizer(randomizingFactor);
+
         return updatedQuestion;
     }
 
@@ -340,8 +331,7 @@ public class QuestionEngine {
                 ));
 
         answeredQuestion.setLastAccessed(ZonedDateTime.now());
-        Question updatedQuestion = questionRepository.saveAndFlush(answeredQuestion);
-        allQuestionMap.put(updatedQuestion.getId(), updatedQuestion);
+        Question updatedQuestion = questionService.updateQuestion(answeredQuestion);
         recalculateRandomizer(randomizingFactor);
         return updatedQuestion;
     }

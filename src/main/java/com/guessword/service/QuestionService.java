@@ -1,6 +1,9 @@
 package com.guessword.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.guessword.dao.QuestionRepository;
 import com.guessword.dto.QuestionDto;
@@ -9,7 +12,10 @@ import com.guessword.entity.Question;
 import com.guessword.exception.DataNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class QuestionService {
@@ -21,19 +27,37 @@ public class QuestionService {
     private final QuestionRepository questionRepository;
     private final QuestionMapper questionMapper;
 
-    public QuestionService(final QuestionRepository questionRepository, final QuestionMapper questionMapper) {
+    private Map<Integer, Question> questionsCache;
+
+    public QuestionService(
+        final QuestionRepository questionRepository,
+        final QuestionMapper questionMapper
+    ) {
         this.questionRepository = questionRepository;
         this.questionMapper = questionMapper;
     }
 
-    public QuestionDto updateQuestion(QuestionDto questionDto) {
-        questionRepository.findById(questionDto.getId())
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void init() {
+        questionsCache = questionRepository.findAll().stream().collect(
+            Collectors.toMap(Question::getId, Function.identity())
+        );
+    }
+
+    public Question updateQuestion(Question question) {
+        questionsCache.put(question.getId(), question);
+        Question questionToUpdate = questionRepository.findById(question.getId())
             .orElseThrow(() -> new DataNotFoundException(
-                String.format(COULD_NOT_FIND_A_QUESTION_WITH_ID, questionDto.getId())
+                String.format(COULD_NOT_FIND_A_QUESTION_WITH_ID, question.getId())
             ));
-        Question savedQuestion = questionRepository.save(questionMapper.toEntity(questionDto));
-        LOGGER.info("Question updated {}", savedQuestion);
-        return questionMapper.toDto(savedQuestion);
+        Question updatedQuestion = questionRepository.save(question);
+        LOGGER.info("Updating the question: {}, after update: {}", questionToUpdate, updatedQuestion);
+        return updatedQuestion;
+    }
+
+    public QuestionDto updateQuestion(QuestionDto questionDto) {
+        return questionMapper.toDto(updateQuestion(questionMapper.toEntity(questionDto)));
     }
 
     public QuestionDto findById(Integer questionId) {
@@ -42,6 +66,20 @@ public class QuestionService {
     }
 
     public List<QuestionDto> findAll() {
-        return questionMapper.toDto(questionRepository.findAll());
+        List<Question> allQuestions = questionRepository.findAll();
+        LOGGER.info("findAll questions method found {} records", allQuestions.size());
+        return questionMapper.toDto(allQuestions);
+    }
+
+    public void deleteQuestion(Integer questionId) {
+        questionsCache.remove(questionId);
+        Question questionToDelete = questionRepository.findById(questionId).orElseThrow(
+            () -> new DataNotFoundException(String.format(COULD_NOT_FIND_A_QUESTION_WITH_ID, questionId)));
+        questionRepository.delete(questionToDelete);
+        LOGGER.info("Question deleted {}", questionToDelete);
+    }
+
+    public Map<Integer, Question> getQuestionsCache() {
+        return questionsCache;
     }
 }
