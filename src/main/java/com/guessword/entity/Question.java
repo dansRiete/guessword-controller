@@ -1,12 +1,7 @@
 package com.guessword.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -24,6 +19,7 @@ import javax.persistence.*;
 @AllArgsConstructor
 @Builder(toBuilder = true)
 @ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode
 @Entity
 @Table(schema = "main")
 public class Question implements BaseQuestion {
