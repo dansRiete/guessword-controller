@@ -10,6 +10,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 import javax.persistence.*;
 
@@ -60,6 +61,14 @@ public class Question implements BaseQuestion {
     @JsonIgnore
     @Transient
     private int indexEnd;
+
+    /**
+     * This method is used when limiting collections in order to select random elements
+     * @return hash of fields which are not going to be modified and unique for every question
+     */
+    public int random() {
+        return Objects.hash(id, created);
+    }
 
     public boolean isInList(HashSet<String> tags) {
 
