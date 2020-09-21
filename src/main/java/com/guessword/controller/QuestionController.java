@@ -3,24 +3,21 @@ package com.guessword.controller;
 import java.util.List;
 
 import com.guessword.dto.QuestionDto;
+import com.guessword.dto.mapper.QuestionMapper;
 import com.guessword.service.QuestionService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/question")
 public class QuestionController {
 
     private final QuestionService questionService;
+    private final QuestionMapper questionMapper;
 
-    public QuestionController(final QuestionService questionService) {
+    public QuestionController(final QuestionService questionService, QuestionMapper questionMapper) {
         this.questionService = questionService;
+        this.questionMapper = questionMapper;
     }
 
     @GetMapping
@@ -36,7 +33,12 @@ public class QuestionController {
     @PutMapping("/{questionId}")
     public ResponseEntity<QuestionDto> update(@PathVariable Integer questionId, @RequestBody QuestionDto questionToUpdate) {
         questionToUpdate.setId(questionId);
-        return ResponseEntity.ok(questionService.updateQuestion(questionToUpdate));
+        return ResponseEntity.ok(questionMapper.toDto(questionService.updateQuestion(questionToUpdate)));
+    }
+
+    @PostMapping
+    public ResponseEntity<QuestionDto> create(@RequestBody QuestionDto questionToCreate) {
+        return ResponseEntity.ok(questionService.createQuestion(questionToCreate));
     }
 
     @DeleteMapping("/{questionId}")

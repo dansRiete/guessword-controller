@@ -1,5 +1,6 @@
 package com.guessword.service;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -45,19 +46,30 @@ public class QuestionService {
         );
     }
 
+    public Question updateQuestion(QuestionDto questionDto){
+        return questionMapper.toEntity(questionDto);
+    }
     public Question updateQuestion(Question question) {
         questionsCache.put(question.getId(), question);
         Question questionToUpdate = questionRepository.findById(question.getId())
-            .orElseThrow(() -> new DataNotFoundException(
-                String.format(COULD_NOT_FIND_A_QUESTION_WITH_ID, question.getId())
-            ));
+                .orElseThrow(() -> new DataNotFoundException(
+                        String.format(COULD_NOT_FIND_A_QUESTION_WITH_ID, question.getId())
+                ));
         Question updatedQuestion = questionRepository.save(question);
         LOGGER.info("Updating the question: {}, after update: {}", questionToUpdate, updatedQuestion);
-        return updatedQuestion;
+        return question;
     }
 
-    public QuestionDto updateQuestion(QuestionDto questionDto) {
-        return questionMapper.toDto(updateQuestion(questionMapper.toEntity(questionDto)));
+    public QuestionDto createQuestion(QuestionDto questionDto) {
+        Question question = questionMapper.toEntity(questionDto);
+        question.setCreated(ZonedDateTime.now());
+        question.setStudyPoints(30.0);
+        question.setId(null);
+        question.setStudyPointsMultiplier(1.0);
+        questionsCache.put(question.getId(), question);
+        Question createdQuestion = questionRepository.save(question);
+        LOGGER.info("Created a question: {}", createdQuestion);
+        return questionMapper.toDto(question);
     }
 
     public QuestionDto findById(Integer questionId) {
