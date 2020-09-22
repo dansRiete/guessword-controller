@@ -66,8 +66,8 @@ public class QuestionService {
         question.setStudyPoints(30.0);
         question.setId(null);
         question.setStudyPointsMultiplier(1.0);
-        questionsCache.put(question.getId(), question);
         Question createdQuestion = questionRepository.save(question);
+        questionsCache.put(createdQuestion.getId(), createdQuestion);
         LOGGER.info("Created a question: {}", createdQuestion);
         return questionMapper.toDto(question);
     }
