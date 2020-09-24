@@ -129,7 +129,7 @@ public class QuestionEngine {
         List<Question> limitedNonStudiedQuestions = questionService.getQuestionsCache().values().stream()
                 .filter(q -> !isStudied(q))
                 .filter(q -> !alreadyAnsweredQuestions.contains(q.getId()))
-                .sorted(Comparator.comparing(Question::random))     // random, but every time the same order
+                .sorted(Comparator.comparing(Question::getUuid))     // random, but every time the same order
                 .limit(activeQuestionsNumber)
                 .collect(Collectors.toList());
         List<Question> studiedQuestions = questionService.getQuestionsCache().values().stream()

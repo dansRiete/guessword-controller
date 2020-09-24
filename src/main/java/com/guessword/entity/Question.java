@@ -7,10 +7,7 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import javax.persistence.*;
 
@@ -30,6 +27,8 @@ public class Question implements BaseQuestion {
     @SequenceGenerator(schema = "main", sequenceName = "question_sq", name = "question_sq", allocationSize = 1)
     @ToString.Include
     private Integer id;
+
+    private String uuid = UUID.randomUUID().toString();
 
     @Column(nullable = false)
     @ToString.Include
@@ -61,14 +60,6 @@ public class Question implements BaseQuestion {
     @JsonIgnore
     @Transient
     private int indexEnd;
-
-    /**
-     * This method is used when limiting collections in order to select random elements
-     * @return hash of fields which are not going to be modified and unique for every question
-     */
-    public int random() {
-        return Objects.hash(id, created);
-    }
 
     public boolean isInList(HashSet<String> tags) {
 
