@@ -47,7 +47,7 @@ public class QuestionService {
     }
 
     public Question updateQuestion(QuestionDto questionDto){
-        return questionMapper.toEntity(questionDto);
+        return updateQuestion(questionMapper.toEntity(questionDto));
     }
     public Question updateQuestion(Question question) {
         questionsCache.put(question.getId(), question);
