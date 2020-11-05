@@ -1,0 +1,7 @@
+-- Restore Postgres db dumps on local docker instance
+
+sudo docker exec -i postgres psql -U guessword -c 'DROP SCHEMA IF EXISTS main CASCADE;DROP SCHEMA IF EXISTS security CASCADE;DROP SCHEMA IF EXISTS public CASCADE;CREATE SCHEMA public;' && cat /home/okuzk/guessword-db-dumps/from-Prohoster/guessword-dump-20201104.sql | sudo docker exec -i postgres psql -U guessword
+
+-- Rebuild project and upload to remote server
+
+gradle -b /home/okuzk/IdeaProjects/guessword-controller/build.gradle bootJar && scp /home/okuzk/IdeaProjects/guessword-controller/build/libs/guessword-controller-20-001.jar alexkzk@185.212.128.246:~/apps
