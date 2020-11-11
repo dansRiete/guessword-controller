@@ -1,9 +1,14 @@
 postgres.datasource:
   jdbc-url: jdbc:postgresql://localhost:5432/guessword
-  username: alexk
-  password: vlenaf13
-
 spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: debug
