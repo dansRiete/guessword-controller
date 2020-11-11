@@ -45,6 +45,7 @@ public class Question implements BaseQuestion {
     private String tag;
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    @Fetch(value = FetchMode.SUBSELECT)
     @ToString.Include
     private List<Word> words = new ArrayList<>();
 

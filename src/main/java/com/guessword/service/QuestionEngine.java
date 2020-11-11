@@ -103,16 +103,6 @@ public class QuestionEngine {
         return questionMapper.toDto(allMysqlQuestions);
     }
 
-    /*@Transactional
-    public boolean copyAll() {
-        long startTime = System.currentTimeMillis();
-        List<Question> questions = questionDao.getAllMysql();
-        questionRepository.saveAll(questions);
-        LOGGER.info("Copied all question from MySQL. Time: {} ms. Size: {}",
-                System.currentTimeMillis() - startTime, questions.size());
-        return true;
-    }*/
-
     public List<Map<Integer, QuestionLikelihood>> recalculateRandomizer(double power) {
 
         if (MapUtils.isEmpty(questionService.getQuestionsCache())) {
