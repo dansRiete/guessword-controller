@@ -6,6 +6,7 @@ import com.guessword.dto.QuestionDto;
 import com.guessword.dto.mapper.QuestionMapper;
 import com.guessword.service.QuestionService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,6 +19,12 @@ public class QuestionController {
     public QuestionController(final QuestionService questionService, QuestionMapper questionMapper) {
         this.questionService = questionService;
         this.questionMapper = questionMapper;
+    }
+
+    @RequestMapping("/test-hello")
+    public String index(Model model) {
+        model.addAttribute("message", "HELLO!");
+        return "hello";
     }
 
     @GetMapping
