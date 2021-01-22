@@ -1,0 +1,15 @@
+FROM openjdk:11-jdk-slim as build
+WORKDIR /var/tmp/guessword
+COPY gradle gradle
+COPY gradlew .
+COPY build.gradle .
+COPY src src
+RUN ./gradlew build
+
+#FROM openjdk:11-jre-slim
+#FROM arm64v8/adoptopenjdk:11-jdk-hotspot-focal
+FROM arm64v8/adoptopenjdk:11-jre-hotspot-focal
+ARG DEPENDENCY=/var/tmp/guessword/build
+COPY --from=build ${DEPENDENCY}/libs/*.jar /opt/guessword/guessword.jar
+COPY --from=build ${DEPENDENCY}/resources/main/*.yml /var/guessword/
+ENTRYPOINT ["java","-jar", "-Dspring.config.location=file:///var/guessword/", "-Dspring.profiles.active=docker", "/opt/guessword/guessword.jar"]

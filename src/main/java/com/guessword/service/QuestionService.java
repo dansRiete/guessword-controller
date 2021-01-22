@@ -50,13 +50,15 @@ public class QuestionService {
         return updateQuestion(questionMapper.toEntity(questionDto));
     }
     public Question updateQuestion(Question question) {
+        long start = System.currentTimeMillis();
         questionsCache.put(question.getId(), question);
         Question questionToUpdate = questionRepository.findById(question.getId())
                 .orElseThrow(() -> new DataNotFoundException(
                         String.format(COULD_NOT_FIND_A_QUESTION_WITH_ID, question.getId())
                 ));
         Question updatedQuestion = questionRepository.save(question);
-        LOGGER.info("Updating the question: {}, after update: {}", questionToUpdate, updatedQuestion);
+        LOGGER.info("Updating the question: {}, after update: {}, time: {}", questionToUpdate, updatedQuestion,
+            System.currentTimeMillis() - start);
         return question;
     }
 

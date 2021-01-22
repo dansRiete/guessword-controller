@@ -1,6 +1,8 @@
 postgres.datasource:
   jdbc-url: jdbc:postgresql://localhost:5432/guessword
 spring:
+  thymeleaf:
+    cache: false
   jpa:
     hibernate:
       ddl-auto: validate

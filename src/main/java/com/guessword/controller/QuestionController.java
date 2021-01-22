@@ -21,7 +21,7 @@ public class QuestionController {
         this.questionMapper = questionMapper;
     }
 
-    @RequestMapping("/test-hello")
+    @GetMapping("/hello")
     public String index(Model model) {
         model.addAttribute("message", "HELLO!");
         return "hello";
