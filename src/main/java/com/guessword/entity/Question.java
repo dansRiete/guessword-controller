@@ -49,11 +49,6 @@ public class Question implements BaseQuestion {
     @ToString.Include
     private List<Word> words = new ArrayList<>();
 
-    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
-    @Fetch(value = FetchMode.SUBSELECT)
-    @JsonIgnore
-    private List<Answer> answers = new ArrayList<>();
-
     @JsonIgnore
     @Transient
     private int indexStart;
@@ -86,14 +81,5 @@ public class Question implements BaseQuestion {
         this.words.clear();
         this.words.addAll(words);
         this.words.forEach(word -> word.setQuestion(this));
-    }
-
-    public void setAnswers(final List<Answer> answers) {
-        if (CollectionUtils.isEmpty(answers)) {
-            return;
-        }
-        this.answers.clear();
-        this.answers.addAll(answers);
-        this.answers.forEach(word -> word.setQuestion(this));
     }
 }
