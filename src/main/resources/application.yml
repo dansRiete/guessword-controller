@@ -34,7 +34,7 @@ qservice:
   learned-margin: 3
   randomizer-factor: 1.75
   index-max-range: 1000000
-  active-questions: 600
+  active-questions: 1000
   non-repeatable-questions: 300
 
 logging:
@@ -45,3 +45,6 @@ logging:
   level:
     root: info
     com.guessword: debug
+
+question-engine:
+  study-points-multiplier: 5

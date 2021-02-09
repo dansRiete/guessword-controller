@@ -34,7 +34,6 @@ import static com.guessword.utils.ApplicationConstants.PROBABILITY_ADJUSTING;
 import static com.guessword.utils.ApplicationConstants.RIGHT_ANSWER_DECREMENT;
 import static com.guessword.utils.ApplicationConstants.STUDIED_QUESTIONS_PROBABILITY;
 import static com.guessword.utils.ApplicationConstants.STUDY_POINTS_INIT_MULTIPLIER;
-import static com.guessword.utils.ApplicationConstants.STUDY_POINTS_MULTIPLIER;
 import static com.guessword.utils.ApplicationConstants.WRONG_ANSWER_INCREMENT;
 
 /**
@@ -69,6 +68,9 @@ public class QuestionEngine {
 
     @Value("${qservice.index-error}")
     private double allowableIndexErrorFactor;
+
+    @Value("${question-engine.study-points-multiplier}")
+    private double questionMultiplier;
 
     private final QuestionDao questionDao;
     private final AnswerRepository answerRepository;
@@ -280,8 +282,8 @@ public class QuestionEngine {
         if (!isStudied(answeredQuestion)) {
             answeredQuestion.setStudyPoints(previousStudyPoints - RIGHT_ANSWER_DECREMENT * previousStudyPointsMultiplier);
             answeredQuestion.setStudyPointsMultiplier(
-                    previousStudyPointsMultiplier == STUDY_POINTS_INIT_MULTIPLIER ? STUDY_POINTS_MULTIPLIER :
-                            previousStudyPointsMultiplier * STUDY_POINTS_MULTIPLIER
+                    previousStudyPointsMultiplier == STUDY_POINTS_INIT_MULTIPLIER ? questionMultiplier :
+                            previousStudyPointsMultiplier * previousStudyPointsMultiplier
             );
         }
 
