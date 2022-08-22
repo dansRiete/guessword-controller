@@ -1,5 +1,9 @@
+server:
+  port: 26452
 postgres.datasource:
-  jdbc-url: jdbc:postgresql://localhost:5432/guessword
+  jdbc-url: jdbc:postgresql://localhost:25834/guessword
+  username: guessword
+  password: guessword
 spring:
   thymeleaf:
     cache: false
@@ -10,7 +14,9 @@ spring:
       hibernate:
         format_sql: true
 logging:
-  level:
+  file:
+    enabled: true
+    path: .
     org:
       hibernate:
         SQL: debug

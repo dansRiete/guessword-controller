@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:14.5
+    restart: always
+    environment:
+      - POSTGRES_USER=guessword
+      - POSTGRES_PASSWORD=guessword
+    ports:
+      - '25834:5432'
+    volumes:
+    - /home/akuzko/IdeaProjects/guessword-controller/db/guessword.sql:/docker-entrypoint-initdb.d/guessword.sql
+volumes:
+  db:
+    driver: local
