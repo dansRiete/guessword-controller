@@ -21,12 +21,6 @@ public class QuestionController {
         this.questionMapper = questionMapper;
     }
 
-    @GetMapping("/hello")
-    public String index(Model model) {
-        model.addAttribute("message", "HELLO!");
-        return "hello";
-    }
-
     @GetMapping
     public ResponseEntity<List<QuestionDto>> findAll() {
         return ResponseEntity.ok(questionService.findAll());
@@ -53,21 +47,5 @@ public class QuestionController {
         questionService.deleteQuestion(questionId);
         return ResponseEntity.ok().build();
     }
-
-    /*@GetMapping(value = "/mysql", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<QuestionDto>> findAllMysql() {
-        final List<QuestionDto> allMysqlQuestions = questionEngine.findAllMysql();
-        return ResponseEntity.ok(allMysqlQuestions);
-    }*/
-
-    /*@GetMapping(value = "/copyFromMysql", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Boolean> copy() {
-        return ResponseEntity.ok(questionEngine.copyAll());
-    }*/
-
-    /*@GetMapping(value = "/recalculate/{power}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<Map<Integer, QuestionLikelihood>>> recalculate(@PathVariable Double power) {
-        return ResponseEntity.ok(questionEngine.recalculateRandomizer(power));
-    }*/
 
 }
