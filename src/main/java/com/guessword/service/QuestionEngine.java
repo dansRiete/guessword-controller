@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.guessword.dao.AnswerRepository;
-import com.guessword.dao.QuestionDao;
 import com.guessword.dto.QuestionDto;
 import com.guessword.dto.mapper.QuestionMapper;
 import com.guessword.entity.Answer;
@@ -72,7 +71,6 @@ public class QuestionEngine {
     @Value("${question-engine.study-points-multiplier}")
     private double questionMultiplier;
 
-    private final QuestionDao questionDao;
     private final AnswerRepository answerRepository;
     private final QuestionMapper questionMapper;
     private final QuestionService questionService;
@@ -86,23 +84,13 @@ public class QuestionEngine {
     private long currentMaxIndex;
 
     public QuestionEngine(
-        final QuestionDao questionDao,
         final AnswerRepository answerRepository,
         final QuestionMapper questionMapper,
         final QuestionService questionService
     ) {
-        this.questionDao = questionDao;
         this.questionService = questionService;
         this.answerRepository = answerRepository;
         this.questionMapper = questionMapper;
-    }
-
-    public List<QuestionDto> findAllMysql() {
-        long startTime = System.currentTimeMillis();
-        final List<Question> allMysqlQuestions = questionDao.getAllMysql();
-        LOGGER.info("Fetched all from MySQL. Time: {} ms. Found: {}",
-                System.currentTimeMillis() - startTime, allMysqlQuestions.size());
-        return questionMapper.toDto(allMysqlQuestions);
     }
 
     public List<Map<Integer, QuestionLikelihood>> recalculateRandomizer(double power) {

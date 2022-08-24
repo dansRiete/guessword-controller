@@ -13,17 +13,6 @@ spring:
         jdbc:
           time_zone: UTC
 
-postgres.datasource:
-    driver-class-name: org.postgresql.Driver
-    username: guessword
-    password: guessword<G13
-
-mysql.datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    jdbc-url: jdbc:mysql://localhost:3306/guessword
-    username: alex
-    password: vlenaf13
-
 server:
   servlet:
     context-path: /api
