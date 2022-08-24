@@ -42,6 +42,11 @@ public class QuestionController {
         return ResponseEntity.ok(questionService.createQuestion(questionToCreate));
     }
 
+    @PostMapping("/txt")
+    public ResponseEntity<QuestionDto> createTxt(@RequestBody String questionsToCreate) {
+        return ResponseEntity.ok(questionService.createQuestion(questionsToCreate));
+    }
+
     @DeleteMapping("/{questionId}")
     public ResponseEntity<?> delete(@PathVariable Integer questionId) {
         questionService.deleteQuestion(questionId);

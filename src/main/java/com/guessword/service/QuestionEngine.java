@@ -74,7 +74,6 @@ public class QuestionEngine {
     private final AnswerRepository answerRepository;
     private final QuestionMapper questionMapper;
     private final QuestionService questionService;
-
     private final Map<Integer, QuestionLikelihood> activeNonLearnedQuestions = new HashMap<>();
     private final Map<Integer, QuestionLikelihood> activeLearnedQuestions = new HashMap<>();
     private final List<Answer> answers = new LinkedList<>();
@@ -84,10 +83,7 @@ public class QuestionEngine {
     private long currentMaxIndex;
 
     public QuestionEngine(
-        final AnswerRepository answerRepository,
-        final QuestionMapper questionMapper,
-        final QuestionService questionService
-    ) {
+        final AnswerRepository answerRepository, final QuestionMapper questionMapper, final QuestionService questionService) {
         this.questionService = questionService;
         this.answerRepository = answerRepository;
         this.questionMapper = questionMapper;

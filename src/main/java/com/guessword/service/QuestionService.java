@@ -30,10 +30,7 @@ public class QuestionService {
 
     private Map<Integer, Question> questionsCache;
 
-    public QuestionService(
-        final QuestionRepository questionRepository,
-        final QuestionMapper questionMapper
-    ) {
+    public QuestionService(final QuestionRepository questionRepository, final QuestionMapper questionMapper) {
         this.questionRepository = questionRepository;
         this.questionMapper = questionMapper;
     }
@@ -95,5 +92,9 @@ public class QuestionService {
 
     public Map<Integer, Question> getQuestionsCache() {
         return questionsCache;
+    }
+
+    public QuestionDto createQuestion(String questionsToCreate) {
+        return null;
     }
 }
