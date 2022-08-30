@@ -6,7 +6,6 @@ import com.guessword.dto.QuestionDto;
 import com.guessword.dto.mapper.QuestionMapper;
 import com.guessword.service.QuestionService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -43,8 +42,8 @@ public class QuestionController {
     }
 
     @PostMapping("/txt")
-    public ResponseEntity<QuestionDto> createTxt(@RequestBody String questionsToCreate) {
-        return ResponseEntity.ok(questionService.createQuestion(questionsToCreate));
+    public ResponseEntity<String> createTxt(@RequestBody String questionsToCreate) {
+        return ResponseEntity.ok(questionService.createQuestionFromString(questionsToCreate));
     }
 
     @DeleteMapping("/{questionId}")

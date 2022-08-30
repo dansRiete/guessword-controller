@@ -1,6 +1,6 @@
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    jdbc-url: jdbc:postgresql://192.168.1.100:5432/guessword
+    url: jdbc:postgresql://192.168.1.100:5432/guessword
     username: guessword
     password: Vlena<H13
