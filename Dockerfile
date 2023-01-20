@@ -2,7 +2,7 @@ FROM openjdk:11-jdk-slim as build
 WORKDIR /var/tmp/guessword
 COPY gradle gradle
 COPY gradlew .
-COPY build.gradle .
+COPY build.gradle.kts .
 COPY src src
 RUN ./gradlew build
 

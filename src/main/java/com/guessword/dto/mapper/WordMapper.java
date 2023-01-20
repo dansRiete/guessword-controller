@@ -4,7 +4,7 @@ import com.guessword.dto.WordDto;
 import com.guessword.entity.Word;
 import org.mapstruct.Mapper;
 
-@Mapper
+@Mapper(componentModel = "spring")
 public interface WordMapper {
     WordDto toDto(Word question);
     Word toEntity(WordDto questionDto);

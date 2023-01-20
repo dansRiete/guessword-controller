@@ -9,7 +9,8 @@ import org.hibernate.annotations.FetchMode;
 import java.time.ZonedDateTime;
 import java.util.*;
 
-import javax.persistence.*;
+
+import jakarta.persistence.*;
 
 @Getter
 @Setter

@@ -1,9 +1,13 @@
+
+
 spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:26981/guessword
+    username: guessword
+    password: ${SMARTHOUSE_POSTGRES_PASSWORD}
   application:
     name: guessword-2
-#  liquibase:
-#    liquibase-schema: liquibase
-#    change-log: classpath:db/changelog.xml
   jpa:
     hibernate:
       ddl-auto: validate
@@ -14,6 +18,7 @@ spring:
           time_zone: UTC
 
 server:
+  port: 24868
   servlet:
     context-path: /api
 
@@ -26,14 +31,6 @@ qservice:
   active-questions: 1000
   non-repeatable-questions: 300
 
-logging:
-  file:
-    enabled: true
-    path: /var/log/guessword
-    max-history: 90
-  level:
-    root: info
-    com.guessword: debug
 
 question-engine:
   study-points-multiplier: 5
