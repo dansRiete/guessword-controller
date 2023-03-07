@@ -1,16 +1,14 @@
 package com.guessword.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.*;
-import org.apache.commons.collections4.CollectionUtils;
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
-
+import jakarta.persistence.*;
 import java.time.ZonedDateTime;
 import java.util.*;
-
-
-import jakarta.persistence.*;
+import lombok.*;
+import org.apache.commons.collections4.CollectionUtils;
+import org.hibernate.Hibernate;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 @Getter
 @Setter
@@ -18,7 +16,6 @@ import jakarta.persistence.*;
 @AllArgsConstructor
 @Builder(toBuilder = true)
 @ToString(onlyExplicitlyIncluded = true)
-@EqualsAndHashCode
 @Entity
 @Table(schema = "main")
 public class Question implements BaseQuestion {
@@ -82,5 +79,22 @@ public class Question implements BaseQuestion {
         this.words.clear();
         this.words.addAll(words);
         this.words.forEach(word -> word.setQuestion(this));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) {
+            return false;
+        }
+        Question question = (Question) o;
+        return getId() != null && Objects.equals(getId(), question.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

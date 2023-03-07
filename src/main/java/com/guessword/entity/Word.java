@@ -1,16 +1,15 @@
 package com.guessword.entity;
 
 
-
 import jakarta.persistence.*;
-
+import java.util.Objects;
 import lombok.*;
+import org.hibernate.Hibernate;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode
 @Builder
 @Entity
 @Table(schema = "main")
@@ -35,6 +34,23 @@ public class Word {
     @Override
     public String toString() {
         return word + (transcription != null ? " [" + transcription + "]" : "");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) {
+            return false;
+        }
+        Word word = (Word) o;
+        return getId() != null && Objects.equals(getId(), word.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }
 

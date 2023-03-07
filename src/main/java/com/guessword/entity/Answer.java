@@ -2,24 +2,14 @@ package com.guessword.entity;
 
 import jakarta.persistence.*;
 import java.time.ZonedDateTime;
-
-/*import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.Table;*/
-
+import java.util.Objects;
 import lombok.*;
+import org.hibernate.Hibernate;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode
 @Builder
 @Entity
 @Table(schema = "main")
@@ -39,4 +29,20 @@ public class Answer {
     @Column(nullable = false)
     private Boolean correct;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) {
+            return false;
+        }
+        Answer answer = (Answer) o;
+        return getId() != null && Objects.equals(getId(), answer.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }
