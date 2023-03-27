@@ -1,14 +1,32 @@
 version: '3.8'
 services:
-  db:
+  guessword-controller:
+    image: 'guessword-controller:latest'
+    build:
+      context: .
+    container_name: guessword-controller
+    depends_on:
+      - guessword-db
+    ports:
+      - '24868:24868'
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://guessword-db:5432/guessword
+      - SPRING_DATASOURCE_USERNAME=guessword
+      - SPRING_DATASOURCE_PASSWORD=guessword
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    restart: always
+  guessword-db:
     image: postgres:14.5
+    container_name: guessword-db
     environment:
       - POSTGRES_USER=guessword
       - POSTGRES_PASSWORD=guessword
     ports:
-      - '25834:5432'
+      - '24869:5432'
     volumes:
-    - /home/akuzko/IdeaProjects/guessword-controller/db/guessword.sql:/docker-entrypoint-initdb.d/guessword.sql
+#    - /home/akuzko/IdeaProjects/guessword-controller/db/guessword.sql:/docker-entrypoint-initdb.d/guessword.sql # restore db from local dump
+    - /home/akuzko/guessword/docker/postgresql:/var/lib/postgresql/data
+    restart: always
 volumes:
   db:
     driver: local
