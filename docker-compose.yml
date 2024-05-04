@@ -25,7 +25,7 @@ services:
       - '24869:5432'
     volumes:
 #    - /home/akuzko/IdeaProjects/guessword-controller/db/guessword.sql:/docker-entrypoint-initdb.d/guessword.sql # restore db from local dump
-    - /home/akuzko/guessword/docker/postgresql:/var/lib/postgresql/data
+    - /home/alexkzk/guessword/docker/postgresql:/var/lib/postgresql/data
     restart: always
 volumes:
   db:

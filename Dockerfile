@@ -2,6 +2,7 @@ FROM openjdk:17.0.1-jdk-slim as build
 WORKDIR /var/tmp/guessword
 COPY gradle gradle
 COPY gradlew .
+RUN chmod +x ./gradlew
 COPY build.gradle.kts .
 COPY src src
 RUN ./gradlew build
