@@ -13,4 +13,4 @@ FROM openjdk:17.0.1-jdk-slim
 ARG DEPENDENCY=/var/tmp/guessword/build
 COPY --from=build ${DEPENDENCY}/libs/*.jar /opt/guessword/guessword.jar
 COPY --from=build ${DEPENDENCY}/resources/main/*.yml /var/guessword/
-ENTRYPOINT ["java", "-Xdebug",  "-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=*:5005", "-jar", "-Dspring.config.location=file:///var/guessword/", "-Dspring.profiles.active=docker", "/opt/guessword/guessword.jar"]
+ENTRYPOINT ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "-jar", "-Dspring.config.location=file:///var/guessword/", "-Dspring.profiles.active=docker", "/opt/guessword/guessword.jar"]
