@@ -42,6 +42,8 @@ public class Question implements BaseQuestion {
 
     private String tag;
 
+    private Boolean deleted;
+
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     @Fetch(value = FetchMode.SUBSELECT)
     @ToString.Include
@@ -54,23 +56,6 @@ public class Question implements BaseQuestion {
     @JsonIgnore
     @Transient
     private int indexEnd;
-
-    public boolean isInList(HashSet<String> tags) {
-
-        if (tags != null) {
-            if (tags.isEmpty()) {
-                return true;
-            }
-            for (String str : tags) {
-                if (tag != null && tag.equalsIgnoreCase(str)) {
-                    return true;
-                }
-            }
-            return false;
-        } else {
-            return true;
-        }
-    }
 
     public void setWords(final List<Word> words) {
         if (CollectionUtils.isEmpty(words)) {

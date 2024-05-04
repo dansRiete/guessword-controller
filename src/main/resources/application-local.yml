@@ -2,14 +2,12 @@ server:
   port: 26452
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:25834/guessword
+    url: jdbc:postgresql://localhost:24869/guessword
     username: guessword
     password: guessword
   thymeleaf:
     cache: false
   jpa:
-    hibernate:
-      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true

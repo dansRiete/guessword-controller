@@ -16,6 +16,7 @@ import com.guessword.dto.QuestionDto;
 import com.guessword.dto.mapper.QuestionMapper;
 import com.guessword.entity.Question;
 import com.guessword.exception.DataNotFoundException;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -23,7 +24,10 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static java.util.function.Predicate.not;
+
 @Service
+@Getter
 public class QuestionService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(QuestionService.class);
@@ -43,14 +47,14 @@ public class QuestionService {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void init() {
-        questionsCache = questionRepository.findAll().stream().collect(
-            Collectors.toMap(Question::getId, Function.identity())
-        );
+        questionsCache = questionRepository.findAll().stream().filter(q -> q.getDeleted() != null)
+                .filter(not(Question::getDeleted)).collect(Collectors.toMap(Question::getId, Function.identity()));
     }
 
-    public Question updateQuestion(QuestionDto questionDto){
+    public Question updateQuestion(QuestionDto questionDto) {
         return updateQuestion(questionMapper.toEntity(questionDto));
     }
+
     public Question updateQuestion(Question question) {
         long start = System.currentTimeMillis();
         questionsCache.put(question.getId(), question);
@@ -73,14 +77,6 @@ public class QuestionService {
         return questionMapper.toDto(question);
     }
 
-    public QuestionDto createQuestion(Question question) {
-        initQuestion(question);
-        Question createdQuestion = questionRepository.save(question);
-        questionsCache.put(createdQuestion.getId(), createdQuestion);
-        LOGGER.info("Created a question: {}", createdQuestion);
-        return questionMapper.toDto(question);
-    }
-
     public QuestionDto findById(Integer questionId) {
         return questionRepository.findById(questionId).map(questionMapper::toDto)
             .orElseThrow(() -> new DataNotFoundException(String.format(COULD_NOT_FIND_A_QUESTION_WITH_ID, questionId)));
@@ -96,12 +92,9 @@ public class QuestionService {
         questionsCache.remove(questionId);
         Question questionToDelete = questionRepository.findById(questionId).orElseThrow(
             () -> new DataNotFoundException(String.format(COULD_NOT_FIND_A_QUESTION_WITH_ID, questionId)));
-        questionRepository.delete(questionToDelete);
-        LOGGER.info("Question deleted {}", questionToDelete);
-    }
-
-    public Map<Integer, Question> getQuestionsCache() {
-        return questionsCache;
+        questionToDelete.setDeleted(true);
+        questionRepository.save(questionToDelete);
+        LOGGER.info("Question marked as deleted {}", questionToDelete);
     }
 
     public String createQuestionFromString(String questionsToCreate) {
