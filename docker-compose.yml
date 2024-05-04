@@ -9,6 +9,7 @@ services:
       - guessword-db
     ports:
       - '24868:24868'
+      - '5005:5005'
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://guessword-db:5432/guessword
       - SPRING_DATASOURCE_USERNAME=guessword
