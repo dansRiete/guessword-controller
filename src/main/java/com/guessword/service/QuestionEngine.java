@@ -29,12 +29,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import static com.guessword.utils.ApplicationConstants.PROBABILITY_ADJUSTING;
-import static com.guessword.utils.ApplicationConstants.RIGHT_ANSWER_DECREMENT;
-import static com.guessword.utils.ApplicationConstants.STUDIED_QUESTIONS_PROBABILITY;
-import static com.guessword.utils.ApplicationConstants.STUDY_POINTS_INIT_MULTIPLIER;
-import static com.guessword.utils.ApplicationConstants.WRONG_ANSWER_INCREMENT;
-
 /**
  * Contains all the logic for randomizing questions, ensuring the calculation of the probability of asking questions
  * depending on external conditions such as: the number of questions already studied and not studied, the category of
@@ -44,6 +38,13 @@ import static com.guessword.utils.ApplicationConstants.WRONG_ANSWER_INCREMENT;
  */
 @Service
 public class QuestionEngine {
+
+    public static final double STUDY_COMPLETION_THRESHOLD = 3;
+    public static final double STUDY_POINTS_INIT_MULTIPLIER = 1.0;
+    public static final double RIGHT_ANSWER_DECREMENT = STUDY_COMPLETION_THRESHOLD;
+    public static final double WRONG_ANSWER_INCREMENT = STUDY_COMPLETION_THRESHOLD * 2;
+    public static final int STUDIED_QUESTIONS_PROBABILITY = 5;  //  per 100 cases
+    public static final int PROBABILITY_ADJUSTING = 100;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(QuestionEngine.class);
 
@@ -89,29 +90,30 @@ public class QuestionEngine {
         this.questionMapper = questionMapper;
     }
 
-    public List<Map<Integer, QuestionLikelihood>> recalculateRandomizer(double power) {
+    public void recalculateRandomizer(double power) {
 
         if (MapUtils.isEmpty(questionService.getQuestionsCache())) {
             LOGGER.warn("No questions in database. Recalculation was not performed.");
-            return null;
+            return;
         }
 
         long startTime = System.currentTimeMillis();
         activeNonLearnedQuestions.clear();
         double poweredProbFactorSum = 0;
         int learnedIndexes = 0;
+
         List<Integer> alreadyAnsweredQuestions = answers.stream().limit(nonRepeatableQuestions)
-                .map(answer -> answer.getQuestion().getId()).collect(Collectors.toList());
+                .map(answer -> answer.getQuestion().getId()).toList();
+
         List<Question> limitedNonStudiedQuestions = questionService.getQuestionsCache().values().stream()
                 .filter(q -> !isStudied(q))
                 .filter(q -> !alreadyAnsweredQuestions.contains(q.getId()))
                 .sorted(Comparator.comparing(Question::getUuid))     // random, but every time the same order
                 .limit(activeQuestionsNumber)
-                .collect(Collectors.toList());
-        List<Question> studiedQuestions = questionService.getQuestionsCache().values().stream()
-                .filter(this::isStudied).collect(Collectors.toList());
-        List<Question> activeQuestions = Stream.concat(limitedNonStudiedQuestions.stream(), studiedQuestions.stream())
-            .collect(Collectors.toList());
+                .toList();
+
+        List<Question> studiedQuestions = questionService.getQuestionsCache().values().stream().filter(this::isStudied).toList();
+        List<Question> activeQuestions = Stream.concat(limitedNonStudiedQuestions.stream(), studiedQuestions.stream()).collect(Collectors.toList());
         Collections.shuffle(activeQuestions);
 
         //  Populating studied, non-studied question map
@@ -123,10 +125,7 @@ public class QuestionEngine {
                             question.getWords().toString(),
                             question.getStudyPoints(),
                             poweredProbFactor = Math.pow(question.getStudyPoints(), power),
-                            -1,
-                            -1,
-                            -1,
-                            -1
+                            -1, -1, -1, -1
                     );
             if (isStudied(question)) {
                 activeLearnedQuestions.put(learnedIndexes++, questionLikelihood);
@@ -138,6 +137,7 @@ public class QuestionEngine {
 
         //  Computing likelihood indexes.
         long index = -1;
+
         for (QuestionLikelihood question : activeNonLearnedQuestions.values()) {
             if (question.getProbabilityFactor() <= learnedStudyPointsThreshold) {
                 continue;
@@ -152,6 +152,7 @@ public class QuestionEngine {
             LOGGER.warn("Questions' indexes recalculating with fault. End index was: {}, max range {}, "
                 + "allowableIndexErrorFactor {}", index, randomizingIndexesMaxRange, allowableIndexErrorFactor);
         }
+
         LOGGER.debug("Questions' indexes has been recalculated. Non learned questions size: {}. Learned questions size:"
                         + " {}. Total: {}. Time: {} ms. Index range: 0 - {}",
                 limitedNonStudiedQuestions.size(),
@@ -160,8 +161,8 @@ public class QuestionEngine {
                 System.currentTimeMillis() - startTime,
                 index
         );
+
         currentMaxIndex = index;
-        return Arrays.asList(activeNonLearnedQuestions, activeLearnedQuestions);
     }
 
     private boolean isStudied(Question question) {
@@ -247,18 +248,6 @@ public class QuestionEngine {
         return questionMapper.toDto(updatedQuestion);
     }
 
-    private boolean recentlyAnswered(int id) {
-        List<Answer> lastAnswers = answers.stream()
-            .skip(answers.size() < 100 ? 0 : answers.size() - 100)
-            .collect(Collectors.toList());
-        for (int i = 0; i < lastAnswers.size(); i++) {
-            if (id == lastAnswers.get(i).getQuestion().getId()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private Question rightAnswer(Question answeredQuestion, boolean rollback) {
 
         Double previousStudyPoints = answeredQuestion.getStudyPoints();
@@ -316,14 +305,14 @@ public class QuestionEngine {
     @Setter
     @AllArgsConstructor
     public static class QuestionLikelihood {
-        int questionId;
-        String words;
-        double probabilityFactor;
-        double poweredProbabilityFactor;
-        double percentage;
-        long range;
-        long indexStart = -1;
-        long indexEnd = -1;
+        private int questionId;
+        private String words;
+        private double probabilityFactor;
+        private double poweredProbabilityFactor;
+        private double percentage;
+        private long range;
+        private long indexStart;
+        private long indexEnd;
 
         public boolean isInRange(long range) {
             return range >= indexStart && range <= indexEnd;
