@@ -47,8 +47,8 @@ public class QuestionService {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void init() {
-        questionsCache = questionRepository.findAll().stream().filter(q -> q.getDeleted() != null)
-                .filter(not(Question::getDeleted)).collect(Collectors.toMap(Question::getId, Function.identity()));
+        questionsCache = questionRepository.findAll().stream().filter(q -> q.getDeleted() == null || !q.getDeleted())
+                .collect(Collectors.toMap(Question::getId, Function.identity()));
     }
 
     public Question updateQuestion(QuestionDto questionDto) {
