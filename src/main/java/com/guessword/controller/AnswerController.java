@@ -16,7 +16,7 @@ public class AnswerController {
     private final QuestionEngine questionEngine;
 
     public AnswerController(final QuestionEngine questionEngine) {
-        this.questionEngine =     questionEngine;
+        this.questionEngine = questionEngine;   //  v1
     }
 
     @GetMapping(value = "/getNext")
