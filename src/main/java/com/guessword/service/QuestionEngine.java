@@ -253,10 +253,13 @@ public class QuestionEngine {
         Double previousStudyPoints = answeredQuestion.getStudyPoints();
         Double previousStudyPointsMultiplier = answeredQuestion.getStudyPointsMultiplier();
         if (!isStudied(answeredQuestion)) {
-            answeredQuestion.setStudyPoints(previousStudyPoints - RIGHT_ANSWER_DECREMENT * previousStudyPointsMultiplier);
-            answeredQuestion.setStudyPointsMultiplier(
-                    previousStudyPointsMultiplier == STUDY_POINTS_INIT_MULTIPLIER ? questionMultiplier :
-                            previousStudyPointsMultiplier * previousStudyPointsMultiplier
+            answeredQuestion.setStudyPoints(Math.round(
+                    previousStudyPoints - RIGHT_ANSWER_DECREMENT * previousStudyPointsMultiplier * 10.0
+            ) / 10.0);
+            answeredQuestion.setStudyPointsMultiplier(Math.round(
+                    previousStudyPointsMultiplier == STUDY_POINTS_INIT_MULTIPLIER ?
+                            questionMultiplier : previousStudyPointsMultiplier * previousStudyPointsMultiplier * 10.0
+                    ) / 10.0
             );
         }
 
@@ -280,10 +283,11 @@ public class QuestionEngine {
         Double previousStudyPoints = answeredQuestion.getStudyPoints();
         Double previousStudyPointsMultiplier = answeredQuestion.getStudyPointsMultiplier();
         if (isStudied(answeredQuestion)) {
-            answeredQuestion.setStudyPoints(
-                    previousStudyPoints + WRONG_ANSWER_INCREMENT * answeredQuestion.getStudyPointsMultiplier());
+            answeredQuestion.setStudyPoints(Math.round(
+                    previousStudyPoints + WRONG_ANSWER_INCREMENT * answeredQuestion.getStudyPointsMultiplier() * 10.0
+            ) / 10.0);
         } else {
-            answeredQuestion.setStudyPoints(previousStudyPoints + WRONG_ANSWER_INCREMENT);
+            answeredQuestion.setStudyPoints(Math.round(previousStudyPoints + WRONG_ANSWER_INCREMENT * 10.0) / 10.0);
         }
         answeredQuestion.setStudyPointsMultiplier(STUDY_POINTS_INIT_MULTIPLIER);
 
