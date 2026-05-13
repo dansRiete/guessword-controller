@@ -3,9 +3,9 @@
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:26981/guessword
+    url: jdbc:postgresql://192.168.0.201:24869/guessword
     username: guessword
-    password: ${SMARTHOUSE_POSTGRES_PASSWORD}
+    password: guessword
   application:
     name: guessword-2
   jpa:
@@ -34,3 +34,6 @@ qservice:
 
 question-engine:
   study-points-multiplier: 5
+
+claude:
+  api-key: ${CLAUDE_API_KEY:}

@@ -20,10 +20,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web:3.0.1")
 
     //    Lombok modules >>
-    compileOnly("org.projectlombok:lombok:1.18.24")
-    annotationProcessor("org.projectlombok:lombok:1.18.24")
-    testImplementation("org.projectlombok:lombok:1.18.24")
-    testAnnotationProcessor("org.projectlombok:lombok:1.18.24")
+    compileOnly("org.projectlombok:lombok:1.18.34")
+    annotationProcessor("org.projectlombok:lombok:1.18.34")
+    testImplementation("org.projectlombok:lombok:1.18.34")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.34")
 
     //    Mapstruct modules >>
     implementation("org.mapstruct:mapstruct:1.5.3.Final")
