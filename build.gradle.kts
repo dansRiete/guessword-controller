@@ -18,6 +18,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa:3.0.1")
     implementation("org.springframework.boot:spring-boot-starter-web:3.0.1")
+    implementation("org.springframework.boot:spring-boot-starter-actuator:3.0.1")
 
     //    Lombok modules >>
     compileOnly("org.projectlombok:lombok:1.18.34")
