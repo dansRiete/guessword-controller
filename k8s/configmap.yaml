@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: guessword-config
+  namespace: guessword
+data:
+  SPRING_PROFILES_ACTIVE: "docker"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://guessword-db:5432/guessword"
+  SPRING_DATASOURCE_USERNAME: "guessword"
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "update"

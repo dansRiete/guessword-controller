@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: guessword-controller
+  namespace: guessword
+  labels:
+    app: guessword-controller
+spec:
+  selector:
+    app: guessword-controller
+  ports:
+    - port: 24868
+      targetPort: 24868

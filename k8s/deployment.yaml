@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guessword-controller
+  namespace: guessword
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: guessword-controller
+  template:
+    metadata:
+      labels:
+        app: guessword-controller
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: guessword-controller
+          image: ghcr.io/dansriete/guessword-controller:latest
+          ports:
+            - containerPort: 24868
+              hostPort: 24868
+          envFrom:
+            - configMapRef:
+                name: guessword-config
+            - secretRef:
+                name: guessword-secret
+          readinessProbe:
+            httpGet:
+              path: /api/actuator/health
+              port: 24868
+            initialDelaySeconds: 40
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/actuator/health
+              port: 24868
+            initialDelaySeconds: 60
+            periodSeconds: 30

@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: guessword-controller
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: git@github.com:dansRiete/guessword-controller.git
+    targetRevision: master
+    path: k8s
+    directory:
+      exclude: argocd-app.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: guessword
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

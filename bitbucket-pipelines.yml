@@ -1,0 +1,21 @@
+image: atlassian/default-image:4
+
+pipelines:
+  branches:
+    master:
+      - step:
+          name: Build and Deploy
+          runs-on:
+            - self.hosted
+            - linux
+          script:
+            - IMAGE=ghcr.io/dansriete/guessword-controller
+            - echo "$GHCR_TOKEN" | docker login ghcr.io -u $GHCR_USERNAME --password-stdin
+            - docker build --no-cache -t $IMAGE:$BITBUCKET_COMMIT -t $IMAGE:latest .
+            - docker push $IMAGE:$BITBUCKET_COMMIT
+            - docker push $IMAGE:latest
+            - KUBECONFIG=/home/alexkzk/.kube/config kubectl set image deployment/guessword-controller
+                guessword-controller=$IMAGE:$BITBUCKET_COMMIT
+                -n guessword
+            - KUBECONFIG=/home/alexkzk/.kube/config kubectl rollout status deployment/guessword-controller
+                -n guessword --timeout=300s
