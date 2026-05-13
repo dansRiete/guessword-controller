@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: git@github.com:dansRiete/guessword-controller.git
+    repoURL: https://github.com/dansRiete/guessword-controller.git
     targetRevision: master
     path: k8s
     directory:
