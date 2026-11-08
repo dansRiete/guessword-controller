@@ -15,11 +15,9 @@ spec:
       labels:
         app: guessword-controller
     spec:
-      imagePullSecrets:
-        - name: ghcr-secret
       containers:
         - name: guessword-controller
-          image: ghcr.io/dansriete/guessword-controller:latest
+          image: localhost:5000/guessword-controller:latest
           ports:
             - containerPort: 24868
               hostPort: 24868
