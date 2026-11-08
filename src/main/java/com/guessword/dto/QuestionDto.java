@@ -22,5 +22,6 @@ public class QuestionDto implements BaseQuestion {
     private ZonedDateTime created;
     private ZonedDateTime lastAccessed;
     private String tag;
+    private Boolean confirmed;
     private List<WordDto> words;
 }

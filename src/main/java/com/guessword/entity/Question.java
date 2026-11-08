@@ -44,6 +44,8 @@ public class Question implements BaseQuestion {
 
     private Boolean deleted;
 
+    private Boolean confirmed;
+
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     @Fetch(value = FetchMode.SUBSELECT)
     @ToString.Include
