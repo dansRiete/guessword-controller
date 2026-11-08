@@ -48,7 +48,7 @@ public class ClaudeService {
 
             Map<String, Object> body = Map.of(
                     "model", MODEL,
-                    "max_tokens", 200,
+                    "max_tokens", 500,
                     "messages", List.of(Map.of("role", "user", "content", prompt))
             );
 
