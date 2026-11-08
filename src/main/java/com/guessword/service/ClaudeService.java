@@ -46,12 +46,16 @@ public class ClaudeService {
                     "natural collocation with context directly (e.g., \"joint effort\" and \"совместные усилия\") " +
                     "so it is unambiguous and effective to learn. Avoid repeating the word in parentheses " +
                     "like \"joint (joint effort)\" — keep the suggested phrase clean and distraction-free.\n";
+            String otherWaysInstruction =
+                    "Always include a section titled \"**Other ways to say it:**\" with 2-4 natural English " +
+                    "alternatives or synonyms.\n";
             String prompt;
             if (cleanEn.isEmpty() && cleanRu.isEmpty()) {
                 prompt = "You are helping with an English-Russian vocabulary learning app.\n" +
                         commentSection +
                         "Based on the author's comment, provide a short explanation (maximum 3-4 bullet points) " +
                         "and recommend the best Russian-English phrase pair.\n" +
+                        otherWaysInstruction +
                         collocationInstruction +
                         "At the very end, state your recommended pair using these exact two lines:\n" +
                         "**Suggested RU:** <suggested Russian phrase>\n" +
@@ -66,6 +70,7 @@ public class ClaudeService {
                         commentSection +
                         "Provide a short, concise explanation (maximum 3-4 bullet points) of the best " +
                         targetLang + " translations and their nuances.\n" +
+                        otherWaysInstruction +
                         collocationInstruction +
                         "At the very end, state your recommended pair using these exact two lines:\n" +
                         "**Suggested RU:** <suggested Russian phrase>\n" +
@@ -78,6 +83,7 @@ public class ClaudeService {
                         "Check the correctness of the English translation for the Russian phrase. " +
                         "Provide a short, concise summary (maximum 4-5 sentences or bullet points) " +
                         "about whether it is correct, any nuance differences, or better alternatives if needed.\n" +
+                        otherWaysInstruction +
                         "If the translation does not seem completely accurate, natural, or complete, or if the word " +
                         "is ambiguous on its own, or if the author's comment requests a specific adjustment, " +
                         "do your best to guess what the author tried to learn by this phrase " +
