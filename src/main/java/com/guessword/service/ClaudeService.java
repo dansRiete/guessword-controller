@@ -36,6 +36,12 @@ public class ClaudeService {
         try {
             String cleanEn = en == null ? "" : en.trim();
             String cleanRu = ru == null ? "" : ru.trim();
+            String collocationInstruction =
+                    "If the word or phrase is ambiguous, polysemous, or too generic on its own " +
+                    "(for example, a standalone word like \"joint\" or \"совместный\"), suggest a short, " +
+                    "natural collocation with context directly (e.g., \"joint effort\" and \"совместные усилия\") " +
+                    "so it is unambiguous and effective to learn. Avoid repeating the word in parentheses " +
+                    "like \"joint (joint effort)\" — keep the suggested phrase clean and distraction-free.\n";
             String prompt;
             if (cleanEn.isEmpty() || cleanRu.isEmpty()) {
                 String sourceLang = cleanEn.isEmpty() ? "Russian" : "English";
@@ -46,6 +52,7 @@ public class ClaudeService {
                         "and left the " + targetLang + " translation empty.\n" +
                         "Provide a short, concise explanation (maximum 3-4 bullet points) of the best " +
                         targetLang + " translations and their nuances.\n" +
+                        collocationInstruction +
                         "At the very end, state your recommended pair using these exact two lines:\n" +
                         "**Suggested RU:** <suggested Russian phrase>\n" +
                         "**Suggested EN:** <suggested English phrase>";
@@ -56,13 +63,14 @@ public class ClaudeService {
                         "Check the correctness of the English translation for the Russian phrase. " +
                         "Provide a short, concise summary (maximum 4-5 sentences or bullet points) " +
                         "about whether it is correct, any nuance differences, or better alternatives if needed.\n" +
-                        "If the translation does not seem completely accurate, natural, or complete, do your best " +
-                        "to guess what the author tried to learn by this phrase and come up with the best corrected " +
-                        "pair for BOTH Russian and English. State your suggestion clearly at the very end using " +
-                        "these exact two lines:\n" +
+                        "If the translation does not seem completely accurate, natural, or complete, or if the word " +
+                        "is ambiguous on its own, do your best to guess what the author tried to learn by this phrase " +
+                        "and come up with the best corrected pair for BOTH Russian and English.\n" +
+                        collocationInstruction +
+                        "State your suggestion clearly at the very end using these exact two lines:\n" +
                         "**Suggested RU:** <suggested Russian phrase>\n" +
                         "**Suggested EN:** <suggested English phrase>\n" +
-                        "If the existing pair is already completely accurate and needs no changes, omit those two lines.";
+                        "If the existing pair is already completely accurate, unambiguous, and needs no changes, omit those two lines.";
             }
 
             HttpHeaders headers = new HttpHeaders();
