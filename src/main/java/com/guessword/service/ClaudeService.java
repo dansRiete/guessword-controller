@@ -31,11 +31,15 @@ public class ClaudeService {
         return cache.computeIfAbsent(language + ":" + word.toLowerCase().trim(), k -> fetchFromClaude(word, language));
     }
 
-    public String checkTranslation(String en, String ru) {
+    public String checkTranslation(String en, String ru, String comment) {
         if (apiKey.isBlank()) return "Claude API key is not configured.";
         try {
             String cleanEn = en == null ? "" : en.trim();
             String cleanRu = ru == null ? "" : ru.trim();
+            String cleanComment = comment == null ? "" : comment.trim();
+            String commentSection = cleanComment.isEmpty() ? "" :
+                    "Author's comment / desired meaning or context: \"" + cleanComment + "\"\n" +
+                    "Pay close attention to the author's comment to understand what exact meaning, nuance, or phrase they want to learn.\n";
             String collocationInstruction =
                     "If the word or phrase is ambiguous, polysemous, or too generic on its own " +
                     "(for example, a standalone word like \"joint\" or \"совместный\"), suggest a short, " +
@@ -43,13 +47,23 @@ public class ClaudeService {
                     "so it is unambiguous and effective to learn. Avoid repeating the word in parentheses " +
                     "like \"joint (joint effort)\" — keep the suggested phrase clean and distraction-free.\n";
             String prompt;
-            if (cleanEn.isEmpty() || cleanRu.isEmpty()) {
+            if (cleanEn.isEmpty() && cleanRu.isEmpty()) {
+                prompt = "You are helping with an English-Russian vocabulary learning app.\n" +
+                        commentSection +
+                        "Based on the author's comment, provide a short explanation (maximum 3-4 bullet points) " +
+                        "and recommend the best Russian-English phrase pair.\n" +
+                        collocationInstruction +
+                        "At the very end, state your recommended pair using these exact two lines:\n" +
+                        "**Suggested RU:** <suggested Russian phrase>\n" +
+                        "**Suggested EN:** <suggested English phrase>";
+            } else if (cleanEn.isEmpty() || cleanRu.isEmpty()) {
                 String sourceLang = cleanEn.isEmpty() ? "Russian" : "English";
                 String targetLang = cleanEn.isEmpty() ? "English" : "Russian";
                 String sourcePhrase = cleanEn.isEmpty() ? cleanRu : cleanEn;
                 prompt = "You are helping with an English-Russian vocabulary learning app.\n" +
                         "The user provided the " + sourceLang + " phrase: \"" + sourcePhrase + "\" " +
                         "and left the " + targetLang + " translation empty.\n" +
+                        commentSection +
                         "Provide a short, concise explanation (maximum 3-4 bullet points) of the best " +
                         targetLang + " translations and their nuances.\n" +
                         collocationInstruction +
@@ -60,11 +74,13 @@ public class ClaudeService {
                 prompt = "You are helping with an English-Russian vocabulary learning app.\n" +
                         "English phrase: \"" + cleanEn + "\"\n" +
                         "Russian phrase: \"" + cleanRu + "\"\n" +
+                        commentSection +
                         "Check the correctness of the English translation for the Russian phrase. " +
                         "Provide a short, concise summary (maximum 4-5 sentences or bullet points) " +
                         "about whether it is correct, any nuance differences, or better alternatives if needed.\n" +
                         "If the translation does not seem completely accurate, natural, or complete, or if the word " +
-                        "is ambiguous on its own, do your best to guess what the author tried to learn by this phrase " +
+                        "is ambiguous on its own, or if the author's comment requests a specific adjustment, " +
+                        "do your best to guess what the author tried to learn by this phrase " +
                         "and come up with the best corrected pair for BOTH Russian and English.\n" +
                         collocationInstruction +
                         "State your suggestion clearly at the very end using these exact two lines:\n" +
