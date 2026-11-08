@@ -1,6 +1,7 @@
 package com.guessword.controller;
 
 import com.guessword.dto.QuestionDto;
+import com.guessword.dto.StatisticsDto;
 import com.guessword.service.QuestionEngine;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -59,6 +60,12 @@ public class AnswerController {
                                                  @RequestParam("actualAnswer") String actualAnswer) {
         questionEngine.saveActualAnswer(questionId, actualAnswer);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping(value = "/statistics")
+    public ResponseEntity<StatisticsDto> getTodayStatistics(
+            @RequestParam(value = "tz", defaultValue = "America/New_York") String tz) {
+        return ResponseEntity.ok(questionEngine.getTodayStatistics(tz));
     }
 
 }

@@ -32,6 +32,12 @@ public class Answer {
     @Column(name = "actual_answer")
     private String actualAnswer;
 
+    @Column(name = "study_points_before")
+    private Double studyPointsBefore;
+
+    @Column(name = "study_points_after")
+    private Double studyPointsAfter;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -1,19 +1,23 @@
 package com.guessword.service;
 
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.guessword.dao.AnswerRepository;
 import com.guessword.dto.QuestionDto;
+import com.guessword.dto.StatisticsDto;
 import com.guessword.dto.mapper.QuestionMapper;
 import com.guessword.entity.Answer;
 import com.guessword.entity.BaseQuestion;
@@ -232,6 +236,7 @@ public class QuestionEngine {
             questionToRollback = answeredQuestion.toBuilder().build();
         }
 
+        Double studyPointsBefore = answeredQuestion.getStudyPoints();
         Question updatedQuestion;
 
         if (correct) {
@@ -239,13 +244,69 @@ public class QuestionEngine {
         } else {
             updatedQuestion = wrongAnswer(answeredQuestion, rollback);
         }
+        Double studyPointsAfter = updatedQuestion.getStudyPoints();
 
-        Answer answer = Answer.builder().answered(ZonedDateTime.now(ZoneId.of("UTC")))
-                .question(updatedQuestion).correct(correct).build();
-        answer = answerRepository.saveAndFlush(answer);
-        answers.add(0, answer);
+        if (rollback && !answers.isEmpty() && answers.get(0).getQuestion() != null
+                && updatedQuestion.getId().equals(answers.get(0).getQuestion().getId())) {
+            Answer previousAnswer = answers.get(0);
+            previousAnswer.setAnswered(ZonedDateTime.now(ZoneId.of("UTC")));
+            previousAnswer.setQuestion(updatedQuestion);
+            previousAnswer.setCorrect(correct);
+            previousAnswer.setStudyPointsBefore(studyPointsBefore);
+            previousAnswer.setStudyPointsAfter(studyPointsAfter);
+            answerRepository.saveAndFlush(previousAnswer);
+        } else {
+            Answer answer = Answer.builder()
+                    .answered(ZonedDateTime.now(ZoneId.of("UTC")))
+                    .question(updatedQuestion)
+                    .correct(correct)
+                    .studyPointsBefore(studyPointsBefore)
+                    .studyPointsAfter(studyPointsAfter)
+                    .build();
+            answer = answerRepository.saveAndFlush(answer);
+            answers.add(0, answer);
+        }
 
         return questionMapper.toDto(updatedQuestion);
+    }
+
+    public StatisticsDto getTodayStatistics(String tz) {
+        ZoneId zoneId;
+        try {
+            zoneId = (tz == null || tz.isBlank()) ? ZoneId.of("America/New_York") : ZoneId.of(tz);
+        } catch (Exception e) {
+            zoneId = ZoneId.of("America/New_York");
+        }
+        ZonedDateTime startOfTodayUtc = LocalDate.now(zoneId).atStartOfDay(zoneId).withZoneSameInstant(ZoneId.of("UTC"));
+        List<Answer> todayAnswers = answerRepository.findByAnsweredGreaterThanEqualOrderByAnsweredAsc(startOfTodayUtc);
+
+        int total = todayAnswers.size();
+        int rights = 0;
+        int studied = 0;
+        Set<Integer> legacyStudiedQuestionIds = new HashSet<>();
+
+        for (Answer answer : todayAnswers) {
+            if (Boolean.TRUE.equals(answer.getCorrect())) {
+                rights++;
+            }
+            Double before = answer.getStudyPointsBefore();
+            Double after = answer.getStudyPointsAfter();
+            if (before != null && after != null) {
+                if (before > STUDY_COMPLETION_THRESHOLD && after <= STUDY_COMPLETION_THRESHOLD) {
+                    studied++;
+                } else if (before <= STUDY_COMPLETION_THRESHOLD && after > STUDY_COMPLETION_THRESHOLD) {
+                    studied--;
+                }
+            } else if (Boolean.TRUE.equals(answer.getCorrect())
+                    && answer.getQuestion() != null
+                    && answer.getQuestion().getStudyPoints() != null
+                    && answer.getQuestion().getStudyPoints() <= STUDY_COMPLETION_THRESHOLD) {
+                legacyStudiedQuestionIds.add(answer.getQuestion().getId());
+            }
+        }
+        studied += legacyStudiedQuestionIds.size();
+        int rightPercentage = total == 0 ? 0 : (rights * 100 / total);
+        return new StatisticsDto(total, studied, rightPercentage);
     }
 
     public void saveActualAnswer(Integer questionId, String actualAnswer) {
