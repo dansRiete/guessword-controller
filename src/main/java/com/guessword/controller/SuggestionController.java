@@ -22,7 +22,8 @@ public class SuggestionController {
     }
 
     @GetMapping(value = "/check", produces = MediaType.TEXT_PLAIN_VALUE)
-    public String checkTranslation(@RequestParam String en, @RequestParam String ru) {
+    public String checkTranslation(@RequestParam(defaultValue = "") String en,
+                                   @RequestParam(defaultValue = "") String ru) {
         return claudeService.checkTranslation(en, ru);
     }
 }

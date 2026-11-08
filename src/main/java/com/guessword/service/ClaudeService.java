@@ -34,19 +34,36 @@ public class ClaudeService {
     public String checkTranslation(String en, String ru) {
         if (apiKey.isBlank()) return "Claude API key is not configured.";
         try {
-            String prompt = "You are helping with an English-Russian vocabulary learning app.\n" +
-                    "English phrase: \"" + en + "\"\n" +
-                    "Russian phrase: \"" + ru + "\"\n" +
-                    "Check the correctness of the English translation for the Russian phrase. " +
-                    "Provide a short, concise summary (maximum 4-5 sentences or bullet points) " +
-                    "about whether it is correct, any nuance differences, or better alternatives if needed.\n" +
-                    "If the translation does not seem completely accurate, natural, or complete, do your best " +
-                    "to guess what the author tried to learn by this phrase and come up with the best corrected " +
-                    "pair for BOTH Russian and English. State your suggestion clearly at the very end using " +
-                    "these exact two lines:\n" +
-                    "**Suggested RU:** <suggested Russian phrase>\n" +
-                    "**Suggested EN:** <suggested English phrase>\n" +
-                    "If the existing pair is already completely accurate and needs no changes, omit those two lines.";
+            String cleanEn = en == null ? "" : en.trim();
+            String cleanRu = ru == null ? "" : ru.trim();
+            String prompt;
+            if (cleanEn.isEmpty() || cleanRu.isEmpty()) {
+                String sourceLang = cleanEn.isEmpty() ? "Russian" : "English";
+                String targetLang = cleanEn.isEmpty() ? "English" : "Russian";
+                String sourcePhrase = cleanEn.isEmpty() ? cleanRu : cleanEn;
+                prompt = "You are helping with an English-Russian vocabulary learning app.\n" +
+                        "The user provided the " + sourceLang + " phrase: \"" + sourcePhrase + "\" " +
+                        "and left the " + targetLang + " translation empty.\n" +
+                        "Provide a short, concise explanation (maximum 3-4 bullet points) of the best " +
+                        targetLang + " translations and their nuances.\n" +
+                        "At the very end, state your recommended pair using these exact two lines:\n" +
+                        "**Suggested RU:** <suggested Russian phrase>\n" +
+                        "**Suggested EN:** <suggested English phrase>";
+            } else {
+                prompt = "You are helping with an English-Russian vocabulary learning app.\n" +
+                        "English phrase: \"" + cleanEn + "\"\n" +
+                        "Russian phrase: \"" + cleanRu + "\"\n" +
+                        "Check the correctness of the English translation for the Russian phrase. " +
+                        "Provide a short, concise summary (maximum 4-5 sentences or bullet points) " +
+                        "about whether it is correct, any nuance differences, or better alternatives if needed.\n" +
+                        "If the translation does not seem completely accurate, natural, or complete, do your best " +
+                        "to guess what the author tried to learn by this phrase and come up with the best corrected " +
+                        "pair for BOTH Russian and English. State your suggestion clearly at the very end using " +
+                        "these exact two lines:\n" +
+                        "**Suggested RU:** <suggested Russian phrase>\n" +
+                        "**Suggested EN:** <suggested English phrase>\n" +
+                        "If the existing pair is already completely accurate and needs no changes, omit those two lines.";
+            }
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("x-api-key", apiKey);
