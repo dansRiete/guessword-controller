@@ -31,6 +31,39 @@ public class ClaudeService {
         return cache.computeIfAbsent(language + ":" + word.toLowerCase().trim(), k -> fetchFromClaude(word, language));
     }
 
+    public String checkTranslation(String en, String ru) {
+        if (apiKey.isBlank()) return "Claude API key is not configured.";
+        try {
+            String prompt = "You are helping with an English-Russian vocabulary learning app.\n" +
+                    "English phrase: \"" + en + "\"\n" +
+                    "Russian phrase: \"" + ru + "\"\n" +
+                    "Check the correctness of the English translation for the Russian phrase. " +
+                    "Provide a short, concise summary (maximum 4-5 sentences or bullet points) " +
+                    "about whether it is correct, any nuance differences, or better alternatives if needed.";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("x-api-key", apiKey);
+            headers.set("anthropic-version", "2023-06-01");
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            Map<String, Object> body = Map.of(
+                    "model", MODEL,
+                    "max_tokens", 200,
+                    "messages", List.of(Map.of("role", "user", "content", prompt))
+            );
+
+            ClaudeResponse response = restTemplate.postForObject(
+                    CLAUDE_API_URL, new HttpEntity<>(body, headers), ClaudeResponse.class);
+
+            if (response == null || response.getContent() == null || response.getContent().isEmpty()) {
+                return "No response from LLM.";
+            }
+            return response.getContent().get(0).getText().trim();
+        } catch (Exception e) {
+            return "Error checking translation: " + e.getMessage();
+        }
+    }
+
     private List<String> fetchFromClaude(String word, String language) {
         try {
             String targetLang = "en".equals(language) ? "Russian" : "English";

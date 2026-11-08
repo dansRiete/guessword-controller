@@ -248,6 +248,18 @@ public class QuestionEngine {
         return questionMapper.toDto(updatedQuestion);
     }
 
+    public void saveActualAnswer(Integer questionId, String actualAnswer) {
+        Answer targetAnswer = answers.stream()
+                .filter(a -> a.getQuestion() != null && questionId.equals(a.getQuestion().getId()))
+                .findFirst()
+                .orElseGet(() -> answerRepository.findFirstByQuestionIdOrderByAnsweredDesc(questionId)
+                        .orElseThrow(() -> new AnswerException(
+                                String.format("No answer found for question id: <%d>", questionId))));
+        targetAnswer.setActualAnswer(actualAnswer);
+        answerRepository.saveAndFlush(targetAnswer);
+        LOGGER.info("Saved actual answer '{}' for question id {}", actualAnswer, questionId);
+    }
+
     private Question rightAnswer(Question answeredQuestion, boolean rollback) {
 
         Double previousStudyPoints = answeredQuestion.getStudyPoints();

@@ -3,6 +3,7 @@ package com.guessword.controller;
 import com.guessword.dto.SuggestionDto;
 import com.guessword.service.ClaudeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,5 +19,10 @@ public class SuggestionController {
     @GetMapping
     public SuggestionDto getSuggestions(@RequestParam String word, @RequestParam String language) {
         return new SuggestionDto(claudeService.getSuggestions(word, language));
+    }
+
+    @GetMapping(value = "/check", produces = MediaType.TEXT_PLAIN_VALUE)
+    public String checkTranslation(@RequestParam String en, @RequestParam String ru) {
+        return claudeService.checkTranslation(en, ru);
     }
 }

@@ -29,6 +29,9 @@ public class Answer {
     @Column(nullable = false)
     private Boolean correct;
 
+    @Column(name = "actual_answer")
+    private String actualAnswer;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
